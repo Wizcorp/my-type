@@ -42,7 +42,7 @@ const user = object({
 	lastSeenUsers: array(userIdType).length(0, 5)
 });
 
-user.create({ id: 'abc', name: 'Bob', sex: 'M', foobar: 3, lastBattles: [{ opponentId: 'def' }] });
+var bob = user.create({ id: uuid(), name: 'Bob', sex: 'M', foobar: 3, lastSeenUsers: [] });
 ```
 
 
