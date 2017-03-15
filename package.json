@@ -8,6 +8,7 @@
   },
   "author": "Ron Korving <rkorving@wizcorp.jp>",
   "license": "MIT",
+  "repository": "wizcorp/my-type",
   "dependencies": {
     "deep-copy": "^1.2.0"
   },

@@ -268,7 +268,9 @@ class ArrayType extends Type {
 			try {
 				this.elementType.assert(value[i]);
 			} catch (error) {
-				error.addParentProperty(i);
+				if (error.addParentProperty) {
+					error.addParentProperty(i);
+				}
 				throw error;
 			}
 		}
@@ -356,12 +358,18 @@ class ObjectType extends Type {
 					throw new MyTypeError(`Unknown property "${prop}"`, data[prop]);
 				}
 
+				if (!type.assert) {
+					throw new MyTypeError(`Type for property "${prop}" has no assert() method`, data[prop]);
+				}
+
 				unhandledProperties[prop] = false;
 
 				try {
 					type.assert(data[prop]);
 				} catch (error) {
-					error.addParentProperty(prop);
+					if (error.addParentProperty) {
+						error.addParentProperty(prop);
+					}
 					throw error;
 				}
 			}
