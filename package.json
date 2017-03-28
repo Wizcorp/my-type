@@ -1,10 +1,11 @@
 {
   "name": "my-type",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Yet another JS schema assertion library",
   "main": "index.js",
   "scripts": {
-    "test": "eslint *.js"
+    "test": "eslint *.js && tape 'test/*.js'",
+    "cover": "nyc tape 'test/*.js'"
   },
   "author": "Ron Korving <rkorving@wizcorp.jp>",
   "license": "MIT",
@@ -13,6 +14,8 @@
     "deep-copy": "^1.2.0"
   },
   "devDependencies": {
-    "eslint": "^3.14.0"
+    "eslint": "^3.14.0",
+    "tape": "^4.6.3",
+    "uuid": "^3.0.1"
   }
 }

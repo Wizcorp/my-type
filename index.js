@@ -300,11 +300,17 @@ class ObjectType extends Type {
 	assert(value) {
 		super.assert(value);
 
+		if (this.isOptional && (value === undefined || value === null)) {
+			return;
+		}
+
 		for (const prop of this.propNames) {
 			try {
 				this.propTypes[prop].assert(value[prop]);
 			} catch (error) {
-				error.addParentProperty(prop);
+				if (error.addParentProperty) {
+					error.addParentProperty(prop);
+				}
 				throw error;
 			}
 		}
@@ -390,7 +396,9 @@ class ObjectType extends Type {
 				try {
 					type.assert(obj[prop]);
 				} catch (error) {
-					error.addParentProperty(prop);
+					if (error.addParentProperty) {
+						error.addParentProperty(prop);
+					}
 					throw error;
 				}
 			}
