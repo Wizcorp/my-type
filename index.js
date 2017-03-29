@@ -80,12 +80,19 @@ class Type {
 	optional() {
 		this.isOptional = true;
 		this.assertFn = undefined;
+		this.assertDefaultValue();
 		return this;
 	}
 
 	addTest(failure, message, userLabel) {
 		this.tests.push(new Test(failure, message, userLabel));
 		this.assertFn = undefined;
+	}
+
+	assertDefaultValue() {
+		if (this.defaultValue !== undefined) {
+			this.assert(this.defaultValue);
+		}
 	}
 
 	assert(value) {
@@ -106,8 +113,13 @@ class Type {
 
 class ScalarType extends Type {
 	values(values, userLabel) {
+		// TODO: test all values for type
+
 		values = JSON.stringify(values);
+
 		this.addTest(`!${values}.includes(value)`, `%name must be one of ${values}`, userLabel);
+		this.assertDefaultValue();
+
 		return this;
 	}
 
@@ -117,6 +129,8 @@ class ScalarType extends Type {
 		}
 
 		this.defaultValue = value;
+		this.assertDefaultValue();
+
 		return this;
 	}
 }
@@ -137,12 +151,17 @@ class StringType extends ScalarType {
 			this.addTest(`value.length > ${max}`, `%name string length must be <= ${max} (found: %length)`, userLabel);
 		}
 
+		this.assertDefaultValue();
+
 		return this;
 	}
 
 	regexp(re, userLabel) {
 		re = re.toString();
 		this.addTest(`!${re}.test(value)`, `%name does not match regular expression: ${re}`, userLabel);
+
+		this.assertDefaultValue();
+
 		return this;
 	}
 }
@@ -163,6 +182,8 @@ class NumberType extends ScalarType {
 			this.addTest(`value > ${max}`, `%name must be <= ${max} (found: %value)`, userLabel);
 		}
 
+		this.assertDefaultValue();
+
 		return this;
 	}
 }
@@ -182,6 +203,8 @@ class IntType extends ScalarType {
 		if (typeof max === 'number' && max !== Infinity) {
 			this.addTest(`value > ${max}`, `%name must be <= ${max} (found: %value)`, userLabel);
 		}
+
+		this.assertDefaultValue();
 
 		return this;
 	}
@@ -251,6 +274,8 @@ class ArrayType extends Type {
 		}
 
 		this.defaultValue = deepCopy(value);
+		this.assertDefaultValue();
+
 		return this;
 	}
 
@@ -262,6 +287,8 @@ class ArrayType extends Type {
 		if (typeof max === 'number') {
 			this.addTest(`value.length > ${max}`, `%name array length must be <= ${max} (found: %length)`, userLabel);
 		}
+
+		this.assertDefaultValue();
 
 		return this;
 	}
@@ -305,15 +332,6 @@ class ObjectType extends Type {
 		this.createFn = undefined;
 	}
 
-	default(value) {
-		if (!value || typeof value !== 'object') {
-			throw new MyTypeError('The default value is not an object (found: %type)', value);
-		}
-
-		this.defaultValue = deepCopy(value);
-		return this;
-	}
-
 	assert(value) {
 		super.assert(value);
 
@@ -333,88 +351,108 @@ class ObjectType extends Type {
 		}
 	}
 
+	_getDefaultObject() {
+		if (this.isOptional) {
+			return 'undefined';
+		}
+
+		const body = [];
+
+		for (const prop of this.propNames) {
+			const type = this.propTypes[prop];
+
+			if (type instanceof ObjectType) {
+				body.push(`  ${JSON.stringify(prop)}: ${type._getDefaultObject()}`);
+			} else if (type.defaultValue === undefined) {
+				body.push(`  ${JSON.stringify(prop)}: undefined`);
+			} else {
+				body.push(`  ${JSON.stringify(prop)}: ${JSON.stringify(type.defaultValue)}`);
+			}
+		}
+
+		return `{\n${body.join(',\n  ')}\n}`;
+	}
+
 	create(data) {
 		if (!this.createFn) {
-			const body = [];
-
-			for (const prop of this.propNames) {
-				const value = this.propTypes[prop].defaultValue;
-
-				if (value === undefined) {
-					body.push(`  ${JSON.stringify(prop)}: undefined`);
-				} else {
-					body.push(`  ${JSON.stringify(prop)}: ${JSON.stringify(value)}`);
-				}
-			}
-
-			this.createFn = new Function(`return {\n${body.join(',\n  ')}\n};`); // eslint-disable-line no-new-func
+			this.createFn = new Function(`return ${this._getDefaultObject()};`); // eslint-disable-line no-new-func
 		}
 
 		const obj = this.createFn();
-		this.update(obj, data);
+		this.update(obj, data, true);
 		return obj;
 	}
 
-	update(obj, data) {
-		const unhandledProperties = {};
-		for (const prop of this.propNames) {
-			unhandledProperties[prop] = true;
+	_assertUpdate(obj, data, testForMissingProperties) {
+		if (typeof obj !== 'object') {
+			throw new MyTypeError('The given object to update is not an object-type (found: %type)', obj);
 		}
 
-		if (data && obj) {
-			if (typeof obj !== 'object') {
-				throw new MyTypeError('The given object to update is not an object-type (found: %type)', obj);
+		if (typeof data !== 'object') {
+			throw new TypeError('The given update-data is not an object-type (found: %type)', data);
+		}
+
+		const propNames = Object.keys(data);
+
+		for (const prop of propNames) {
+			const type = this.propTypes[prop];
+
+			if (!type) {
+				throw new MyTypeError(`Unknown property "${prop}"`, data[prop]);
 			}
 
-			if (typeof data !== 'object') {
-				throw new TypeError('The given update-data is not an object-type (found: %type)', data);
-			}
-
-			const propNames = Object.keys(data);
-
-			// first assert all properties are valid
-
-			for (const prop of propNames) {
-				const type = this.propTypes[prop];
-
-				if (!type) {
-					throw new MyTypeError(`Unknown property "${prop}"`, data[prop]);
-				}
-
-				unhandledProperties[prop] = false;
-
-				try {
+			try {
+				if (type._assertUpdate) {
+					type._assertUpdate(obj[prop], data[prop], testForMissingProperties);
+				} else {
 					type.assert(data[prop]);
-				} catch (error) {
-					if (error.addParentProperty) {
-						error.addParentProperty(prop);
+				}
+			} catch (error) {
+				if (error.addParentProperty) {
+					error.addParentProperty(prop);
+				}
+				throw error;
+			}
+		}
+
+		if (testForMissingProperties) {
+			for (const prop of this.propNames) {
+				if (!data.hasOwnProperty(prop)) {
+					// wasn't updated through the data object
+
+					const type = this.propTypes[prop];
+
+					try {
+						type.assert(obj[prop]);
+					} catch (error) {
+						if (error.addParentProperty) {
+							error.addParentProperty(prop);
+						}
+						throw error;
 					}
-					throw error;
 				}
 			}
+		}
+	}
 
-			// safely assign all properties
+	_applyUpdate(obj, data) {
+		const propNames = Object.keys(data);
 
-			for (const prop of propNames) {
+		for (const prop of propNames) {
+			const type = this.propTypes[prop];
+
+			if (type._applyUpdate) {
+				type._applyUpdate(obj[prop], data[prop]);
+			} else {
 				obj[prop] = data[prop];
 			}
 		}
+	}
 
-		// check all properties that were not affected by the data-object
-
-		for (const prop of this.propNames) {
-			if (unhandledProperties[prop]) {
-				const type = this.propTypes[prop];
-
-				try {
-					type.assert(obj[prop]);
-				} catch (error) {
-					if (error.addParentProperty) {
-						error.addParentProperty(prop);
-					}
-					throw error;
-				}
-			}
+	update(obj, data, testForMissingProperties) {
+		if (data && obj) {
+			this._assertUpdate(obj, data, testForMissingProperties || false);
+			this._applyUpdate(obj, data);
 		}
 
 		return obj;

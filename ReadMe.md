@@ -70,13 +70,16 @@ array(type);    // create an array type (with children of a given type)
 object(props);  // create an object type (with properties of given types)
 ```
 
-### Default values (all types)
+### Default values (all types, except object)
 
-You can set up all types to have a default value
+You can set up all types to have a default value.
 
 ```js
 string().default('Hello world');  // create a string type with a default value
 ```
+
+If you want an object to be created according to a default format, simply set the
+defaults on its properties.
 
 ### Set up a type to be optional (all types)
 

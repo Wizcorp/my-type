@@ -20,7 +20,7 @@ test('Create and update a big object', function (t) {
 		pets: object({
 			cat: string().optional(),
 			dog: string().optional()
-		}).default({})
+		})
 	});
 
 	const id = uuid();
@@ -35,7 +35,10 @@ test('Create and update a big object', function (t) {
 		score: 0,
 		foobar: 3,
 		lastSeenUsers: [],
-		pets: {}
+		pets: {
+			cat: undefined,
+			dog: undefined
+		}
 	};
 
 	const expectedBob2 = {
@@ -48,7 +51,8 @@ test('Create and update a big object', function (t) {
 		foobar: 3,
 		lastSeenUsers: ids.slice(),
 		pets: {
-			cat: 'Flip'
+			cat: 'Flip',
+			dog: undefined
 		}
 	};
 
@@ -79,7 +83,10 @@ test('Create and update a big object', function (t) {
 		name: 'Bob',
 		age: undefined,
 		lastSeenUsers: [],
-		pets: {}
+		pets: {
+			cat: undefined,
+			dog: undefined
+		}
 	});
 
 	t.deepEqual(bob, expectedBob1);
