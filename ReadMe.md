@@ -38,7 +38,7 @@ const user = object({
 	sex:           string().values(['M', 'F']),
 	isBanned:      bool().default(false),
 	score:         number().default(0).range(0, 100),
-	foobar:        mixed().types([number(), string()]),
+	foobar:        mixed([number(), string()]),
 	lastSeenUsers: array(userIdType).length(0, 5)
 });
 
@@ -64,7 +64,7 @@ string();       // create a string type
 number();       // create a number type
 int();          // create an integer type
 bool();         // create a boolean type
-mixed();        // create a type that is a combination of other types
+mixed(types);   // create a type that represents any one of given types
 any();          // create a wildcard type
 array(type);    // create an array type (with children of a given type)
 object(props);  // create an object type (with properties of given types)

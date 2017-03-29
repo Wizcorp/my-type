@@ -155,11 +155,11 @@ class NumberType extends ScalarType {
 	}
 
 	range(min, max, userLabel) {
-		if (typeof min === 'number') {
+		if (typeof min === 'number' && min !== -Infinity) {
 			this.addTest(`value < ${min}`, `%name must be >= ${min} (found: %value)`, userLabel);
 		}
 
-		if (typeof max === 'number') {
+		if (typeof max === 'number' && max !== Infinity) {
 			this.addTest(`value > ${max}`, `%name must be <= ${max} (found: %value)`, userLabel);
 		}
 
@@ -175,11 +175,11 @@ class IntType extends ScalarType {
 	}
 
 	range(min, max, userLabel) {
-		if (typeof min === 'number') {
+		if (typeof min === 'number' && min !== -Infinity) {
 			this.addTest(`value < ${min}`, `%name must be >= ${min} (found: %value)`, userLabel);
 		}
 
-		if (typeof max === 'number') {
+		if (typeof max === 'number' && max !== Infinity) {
 			this.addTest(`value > ${max}`, `%name must be <= ${max} (found: %value)`, userLabel);
 		}
 
@@ -200,14 +200,15 @@ class AnyType extends Type {}
 
 
 class MixedType extends Type {
-	constructor() {
+	constructor(types) {
 		super();
-		this.subTypes = [];
-	}
+		this.subTypes = types || [];
 
-	types(types) {
-		this.subTypes = types;
-		return this;
+		for (const type of this.subTypes) {
+			if (!(type instanceof Type)) {
+				throw new MyTypeError(`Type is not a real type`, type);
+			}
+		}
 	}
 
 	assert(value) {
@@ -238,6 +239,10 @@ class ArrayType extends Type {
 		super();
 		this.elementType = elementType;
 		this.addTest('!Array.isArray(value)', '%name is not an array (found: %type)');
+
+		if (!(elementType instanceof Type)) {
+			throw new MyTypeError(`Type for elements is not a real type`, elementType);
+		}
 	}
 
 	default(value) {
@@ -264,6 +269,10 @@ class ArrayType extends Type {
 	assert(value) {
 		super.assert(value);
 
+		if (this.isOptional && (value === undefined || value === null)) {
+			return;
+		}
+
 		for (let i = 0; i < value.length; i += 1) {
 			try {
 				this.elementType.assert(value[i]);
@@ -284,6 +293,14 @@ class ObjectType extends Type {
 		this.addTest("value === null || typeof value !== 'object'", '%name is not an object (found: %type)');
 		this.propTypes = propTypes;
 		this.propNames = Object.keys(propTypes);
+
+		for (const prop of this.propNames) {
+			const type = propTypes[prop];
+
+			if (!(type instanceof Type)) {
+				throw new MyTypeError(`Type for property "${prop}" is not a real type`, type);
+			}
+		}
 
 		this.createFn = undefined;
 	}
@@ -364,10 +381,6 @@ class ObjectType extends Type {
 					throw new MyTypeError(`Unknown property "${prop}"`, data[prop]);
 				}
 
-				if (!type.assert) {
-					throw new MyTypeError(`Type for property "${prop}" has no assert() method`, data[prop]);
-				}
-
 				unhandledProperties[prop] = false;
 
 				try {
@@ -403,6 +416,8 @@ class ObjectType extends Type {
 				}
 			}
 		}
+
+		return obj;
 	}
 }
 
@@ -429,8 +444,8 @@ exports.any = function () {
 	return new AnyType();
 };
 
-exports.mixed = function () {
-	return new MixedType();
+exports.mixed = function (types) {
+	return new MixedType(types);
 };
 
 exports.object = function (propTypes) {

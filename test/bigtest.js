@@ -3,7 +3,7 @@
 const test = require('tape');
 const uuid = require('uuid/v4');
 
-test('Create and update object', function (t) {
+test('Create and update a big object', function (t) {
 	const { object, array, string, number, int, bool, mixed, any } = require('..');
 
 	const userIdType = string().regexp(/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/, 'UUID');
@@ -15,7 +15,7 @@ test('Create and update object', function (t) {
 		sex: string().values(['M', 'F']),
 		isBanned: bool().default(false),
 		score: number().default(0).range(0, 100),
-		foobar: mixed().types([number(), string()]),
+		foobar: mixed([number(), string()]),
 		lastSeenUsers: array(userIdType).length(0, 5),
 		pets: object({
 			cat: string().optional(),
