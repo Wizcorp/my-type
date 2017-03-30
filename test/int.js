@@ -41,18 +41,35 @@ test('Integers', function (t) {
 
 	// range
 
+	t.deepEqual(schema(false, null, [0, 10]).create({ n: 0 }), { n: 0 });
 	t.deepEqual(schema(false, null, [0, 10]).create({ n: 5 }), { n: 5 });
+	t.deepEqual(schema(false, null, [0, 10]).create({ n: 10 }), { n: 10 });
+	t.throws(() => { schema(false, null, [0, 1]).create({ n: -1 }); });
+	t.throws(() => { schema(false, null, [0, 1]).create({ n: 2 }); });
 	t.throws(() => { schema(false, null, [0, 1]).create({ n: 5 }); });
+	t.throws(() => { schema(false, null, [0.5, 1]); });
+	t.throws(() => { schema(false, null, [0, 1.5]); });
 
 	// values
 
 	t.deepEqual(schema(false, null, null, [1, 3, 5]).create({ n: 5 }), { n: 5 });
 	t.throws(() => { schema(false, null, null, [0, 1]).create({ n: 5 }); });
 	t.throws(() => { schema(false, null, null, [0, 1]).create({ n: null }); });
+	t.throws(() => { schema(false, null, null, 'str'); });
+	t.throws(() => { schema(false, null, null, []); });
+	t.throws(() => { schema(false, null, null, [5.5]); });
+	t.throws(() => { schema(false, null, null, [false, true]); });
+	t.throws(() => { schema(false, null, null, [{}]); });
 
 	// type
 
 	t.throws(() => { schema(false).create({ n: 5.1 }); });
+	t.throws(() => { schema(false).create({ n: Infinity }); });
+	t.throws(() => { schema(false).create({ n: -Infinity }); });
+	t.throws(() => { schema(false).create({ n: 'str' }); });
+	t.throws(() => { schema(false).create({ n: true }); });
+	t.throws(() => { schema(false).create({ n: {} }); });
+	t.throws(() => { schema(false).create({ n: NaN }); });
 
 	t.end();
 });

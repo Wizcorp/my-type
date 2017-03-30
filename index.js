@@ -113,7 +113,17 @@ class Type {
 
 class ScalarType extends Type {
 	values(values, userLabel) {
-		// TODO: test all values for type
+		if (!Array.isArray(values)) {
+			throw new MyTypeError('The given values are not in an array (found: %type)', values);
+		}
+
+		if (values.length === 0) {
+			throw new MyTypeError('The given values are an empty array', values);
+		}
+
+		for (const value of values) {
+			this.assert(value);
+		}
 
 		values = JSON.stringify(values);
 
@@ -143,11 +153,19 @@ class StringType extends ScalarType {
 	}
 
 	length(min, max, userLabel) {
-		if (typeof min === 'number') {
+		if (min !== null && min !== undefined) {
+			if (!Number.isInteger(min)) {
+				throw new MyTypeError('The min-length is not an integer (found: %type "%value")', min);
+			}
+
 			this.addTest(`value.length < ${min}`, `%name string length must be >= ${min} (found: %length)`, userLabel);
 		}
 
-		if (typeof max === 'number') {
+		if (max !== null && max !== undefined) {
+			if (!Number.isInteger(max)) {
+				throw new MyTypeError('The max-length is not an integer (found: %type "%value")', max);
+			}
+
 			this.addTest(`value.length > ${max}`, `%name string length must be <= ${max} (found: %length)`, userLabel);
 		}
 
@@ -157,6 +175,10 @@ class StringType extends ScalarType {
 	}
 
 	regexp(re, userLabel) {
+		if (!(re instanceof RegExp)) {
+			throw new MyTypeError('The value provided is not a regular expression (found: %type "%value")', re);
+		}
+
 		re = re.toString();
 		this.addTest(`!${re}.test(value)`, `%name does not match regular expression: ${re}`, userLabel);
 
@@ -171,14 +193,23 @@ class NumberType extends ScalarType {
 	constructor() {
 		super();
 		this.addTest("typeof value !== 'number'", '%name is not a number (found: %type))');
+		this.addTest("value !== value", '%name is NaN');
 	}
 
 	range(min, max, userLabel) {
-		if (typeof min === 'number' && min !== -Infinity) {
+		if (min !== null && min !== undefined && min !== -Infinity) {
+			if (typeof min !== 'number' || min !== min) {
+				throw new MyTypeError('The min-value is not a number (found: %type "%value")', min);
+			}
+
 			this.addTest(`value < ${min}`, `%name must be >= ${min} (found: %value)`, userLabel);
 		}
 
-		if (typeof max === 'number' && max !== Infinity) {
+		if (max !== null && max !== undefined && max !== Infinity) {
+			if (typeof max !== 'number' || max !== max) {
+				throw new MyTypeError('The max-value is not a number (found: %type "%value")', max);
+			}
+
 			this.addTest(`value > ${max}`, `%name must be <= ${max} (found: %value)`, userLabel);
 		}
 
@@ -196,11 +227,19 @@ class IntType extends ScalarType {
 	}
 
 	range(min, max, userLabel) {
-		if (typeof min === 'number' && min !== -Infinity) {
+		if (min !== null && min !== undefined) {
+			if (!Number.isInteger(min)) {
+				throw new MyTypeError('The min-value is not an integer (found: %type "%value")', min);
+			}
+
 			this.addTest(`value < ${min}`, `%name must be >= ${min} (found: %value)`, userLabel);
 		}
 
-		if (typeof max === 'number' && max !== Infinity) {
+		if (max !== null && max !== undefined) {
+			if (!Number.isInteger(max)) {
+				throw new MyTypeError('The max-value is not an integer (found: %type "%value")', max);
+			}
+
 			this.addTest(`value > ${max}`, `%name must be <= ${max} (found: %value)`, userLabel);
 		}
 
