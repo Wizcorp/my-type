@@ -227,7 +227,7 @@ class IntType extends ScalarType {
 	}
 
 	range(min, max, userLabel) {
-		if (min !== null && min !== undefined) {
+		if (min !== null && min !== undefined && min !== -Infinity) {
 			if (!Number.isInteger(min)) {
 				throw new MyTypeError('The min-value is not an integer (found: %type "%value")', min);
 			}
@@ -235,7 +235,7 @@ class IntType extends ScalarType {
 			this.addTest(`value < ${min}`, `%name must be >= ${min} (found: %value)`, userLabel);
 		}
 
-		if (max !== null && max !== undefined) {
+		if (max !== null && max !== undefined && max !== Infinity) {
 			if (!Number.isInteger(max)) {
 				throw new MyTypeError('The max-value is not an integer (found: %type "%value")', max);
 			}
