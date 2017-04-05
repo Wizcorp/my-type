@@ -29,7 +29,7 @@ Let's start with a simple example to sell you the idea.
 ```js
 const { object, array, string, number, int, bool, mixed, any } = require('my-type');
 
-const userIdType = string().regexp(/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/, 'UUID');
+const userIdType = string().regexp(/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/, 'notUUID');
 
 const user = object({
 	id:            userIdType,
@@ -59,47 +59,45 @@ const { string, number, int, bool, mixed, any, array, object } = require('my-typ
 
 ### Type creation
 
-```js
-string();       // create a string type
-number();       // create a number type
-int();          // create an integer type
-bool();         // create a boolean type
-mixed(types);   // create a type that represents any one of given types
-any();          // create a wildcard type
-array(type);    // create an array type (with children of a given type)
-object(props);  // create an object type (with properties of given types)
-```
+* `string([code]);`: creates a **string** type with an error code for type violations
+* `number([code]);`: creates a **number** type with an error code for type violations
+* `int([code]);`: creates an **integer** type with an error code for type violations
+* `bool([code]);`: creates a **boolean** type with an error code for type violations
+* `mixed(types);`: creates a type that represents **any one of the given types**
+* `any();`: creates a **wildcard** type
+* `array(type, [code]);`: creates an **array** type with children of a given type and an error code for type violations
+* `object(props, [code]);`: creates an **object** type with properties of given types and an error code for type violations
 
 ### Default values (all types, except object)
 
 You can set up all types to have a default value.
 
-```js
-string().default('Hello world');  // create a string type with a default value
-```
+* `string().default('Hello world');`: creates a string type with a default value
 
 If you want an object to be created according to a default format, simply set the
 defaults on its properties.
 
 ### Set up a type to be optional (all types)
 
-```js
-string().optional();  // create a string type that does not have to be set (ie: undefined and null are allowed)
-```
+* `string().optional();`: creates a string type that does not have to be set (ie: undefined and null are allowed)
 
 ### Constraints
 
-```js
-string().length(min, max);       // create a string type with a min/max length
-string().regexp(/^[0-9a-f]+$/i); // create a string type with a regular expression constraint
-string().values(['yes', 'no']);  // create a string type with a limited set of possible values
-number().range(min, max);        // create a number type with a min/max value
-number().values(1, 1.5, 2);      // create a number type with a limited set of possible values
-int().range(min, max);           // create an integer type with a min/max value
-int().values(1, 2, 3);           // create an integer type with a limited set of possible values
-bool().values([true]);           // create a boolean type with a limited set of possible values
-array(type).length(min, max);    // create an array type with a min/max length
-```
+* `string().length(min, max, [code])`: creates a string type with a min/max length
+* `string().regexp(regexp, [code]);`: creates a string type with a regular expression constraint
+* `string().values(values, [code])`: creates a string type with a limited set of allowed values
+* `number().range(min, max, [code])`: creates a number type with a min/max value
+* `number().values(values, [code])`: creates a number type with a limited set of allowed values
+* `int().range(min, max, [code])`: creates an integer type with a min/max value
+* `int().values(values, [code])`: creates an integer type with a limited set of allowed values
+* `bool().values(values, [code])`: creates a boolean type with a limited set of allowed values
+* `array(type).length(min, max, [code])`: creates an array type with a min/max length
+
+Every constraint function accepts an extra optional `code` argument. When the constraint is violated, this code will be
+available on your error object as `error.code`. Use either strings or numbers.
+
+For `length` and `range` constraints, you can use `-Infinity` or `Infinity` to indicate that there is
+no limit on the lower or upper end.
 
 Default, Optional and Constraints can be chained in any order:
 
@@ -143,7 +141,7 @@ const user = object({
 });
 ```
 
-You can create instances like this:
+### Object instance creation
 
 ```js
 const myDefaultUser = user.create({ id: 1 });
@@ -156,7 +154,7 @@ const myDefaultUser = user.create({ id: 1 });
 // }
 ```
 
-And update them like this:
+### Safe object updates
 
 ```js
 user.update(myDefaultUser, { name: 'Bob' });
@@ -169,6 +167,24 @@ user.update(myDefaultUser, { name: 'Bob' });
 // }
 ```
 
+Please note that if an update causes an assertion to fail, the source object that was passed to `update()` will
+be in a broken state. For performance and memory reasons, assertions happen during the update cycle, not before.
+
+### Schema assertion after unsafe object updates
+
+Alternatively, you can change objects manually, and assert their correctness using the `schema.assert(obj)` API.
+
+```js
+myDefaultUser.name = 'Bob';
+user.assert(myDefaultUser);
+
+// myDefaultUser: {
+//   id: 1,
+//   name: 'Bob',
+//   isBanned: false,
+//   lastLogin: undefined
+// }
+```
 
 ## Error handling
 
@@ -181,12 +197,13 @@ You can access the following properties on these error objects:
 
 As is usual on Error objects:
 
-- message: The message string (as is normal on Error objects)
-- stack: The stack trace
+- message: The message string.
+- stack: The stack trace.
 
 And additionally:
 
 - value: The value that broke the assertion rules.
+- code: The code that was registered with the type or the constraint (or `undefined` if none was provided).
 
 
 ## License

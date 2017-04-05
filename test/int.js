@@ -6,7 +6,7 @@ test('Integers', function (t) {
 	const { object, int } = require('..');
 
 	function schema(optional, defaultValue, range, values) {
-		const n = int();
+		const n = int('notInt');
 
 		if (optional) {
 			n.optional();
@@ -17,14 +17,30 @@ test('Integers', function (t) {
 		}
 
 		if (range) {
-			n.range(range[0], range[1]);
+			n.range(range[0], range[1], 'outOfRange');
 		}
 
 		if (values) {
-			n.values(values);
+			n.values(values, 'badValue');
 		}
 
 		return object({ n });
+	}
+
+	function throwsCode(code, fn) {
+		let error;
+
+		try {
+			fn();
+		} catch (err) {
+			error = err;
+		}
+
+		if (error) {
+			t.equal(error.code, code);
+		} else {
+			t.fail('Expected function to throw: ' + fn);
+		}
 	}
 
 	// optional
@@ -44,17 +60,17 @@ test('Integers', function (t) {
 	t.deepEqual(schema(false, null, [0, 10]).create({ n: 0 }), { n: 0 });
 	t.deepEqual(schema(false, null, [0, 10]).create({ n: 5 }), { n: 5 });
 	t.deepEqual(schema(false, null, [0, 10]).create({ n: 10 }), { n: 10 });
-	t.throws(() => { schema(false, null, [0, 1]).create({ n: -1 }); });
-	t.throws(() => { schema(false, null, [0, 1]).create({ n: 2 }); });
-	t.throws(() => { schema(false, null, [0, 1]).create({ n: 5 }); });
+	throwsCode('outOfRange', () => { schema(false, null, [0, 1]).create({ n: -1 }); });
+	throwsCode('outOfRange', () => { schema(false, null, [0, 1]).create({ n: 2 }); });
+	throwsCode('outOfRange', () => { schema(false, null, [0, 1]).create({ n: 5 }); });
 	t.throws(() => { schema(false, null, [0.5, 1]); });
 	t.throws(() => { schema(false, null, [0, 1.5]); });
 
 	// values
 
 	t.deepEqual(schema(false, null, null, [1, 3, 5]).create({ n: 5 }), { n: 5 });
-	t.throws(() => { schema(false, null, null, [0, 1]).create({ n: 5 }); });
-	t.throws(() => { schema(false, null, null, [0, 1]).create({ n: null }); });
+	throwsCode('badValue', () => { schema(false, null, null, [0, 1]).create({ n: 5 }); });
+	throwsCode('badValue', () => { schema(false, null, null, [0, 1]).create({ n: -1 }); });
 	t.throws(() => { schema(false, null, null, 'str'); });
 	t.throws(() => { schema(false, null, null, []); });
 	t.throws(() => { schema(false, null, null, [5.5]); });
@@ -63,13 +79,13 @@ test('Integers', function (t) {
 
 	// type
 
-	t.throws(() => { schema(false).create({ n: 5.1 }); });
-	t.throws(() => { schema(false).create({ n: Infinity }); });
-	t.throws(() => { schema(false).create({ n: -Infinity }); });
-	t.throws(() => { schema(false).create({ n: 'str' }); });
-	t.throws(() => { schema(false).create({ n: true }); });
-	t.throws(() => { schema(false).create({ n: {} }); });
-	t.throws(() => { schema(false).create({ n: NaN }); });
+	throwsCode('notInt', () => { schema(false).create({ n: 5.1 }); });
+	throwsCode('notInt', () => { schema(false).create({ n: Infinity }); });
+	throwsCode('notInt', () => { schema(false).create({ n: -Infinity }); });
+	throwsCode('notInt', () => { schema(false).create({ n: 'str' }); });
+	throwsCode('notInt', () => { schema(false).create({ n: true }); });
+	throwsCode('notInt', () => { schema(false).create({ n: {} }); });
+	throwsCode('notInt', () => { schema(false).create({ n: NaN }); });
 
 	t.end();
 });

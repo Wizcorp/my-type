@@ -6,7 +6,7 @@ test('Booleans', function (t) {
 	const { object, bool } = require('..');
 
 	function schema(optional, defaultValue, values) {
-		const b = bool();
+		const b = bool('notBool');
 
 		if (optional) {
 			b.optional();
@@ -17,10 +17,26 @@ test('Booleans', function (t) {
 		}
 
 		if (values) {
-			b.values(values);
+			b.values(values, 'badValue');
 		}
 
 		return object({ b });
+	}
+
+	function throwsCode(code, fn) {
+		let error;
+
+		try {
+			fn();
+		} catch (err) {
+			error = err;
+		}
+
+		if (error) {
+			t.equal(error.code, code);
+		} else {
+			t.fail('Expected function to throw: ' + fn);
+		}
 	}
 
 	// optional
@@ -37,7 +53,7 @@ test('Booleans', function (t) {
 	// values
 
 	t.deepEqual(schema(false, null, [true]).create({ b: true }), { b: true });
-	t.throws(() => { schema(false, null, [false]).create({ b: true }); });
+	throwsCode('badValue', () => { schema(false, null, [false]).create({ b: true }); });
 	t.throws(() => { schema(false, null, 'str'); });
 	t.throws(() => { schema(false, null, []); });
 	t.throws(() => { schema(false, null, ['str']); });
@@ -47,10 +63,10 @@ test('Booleans', function (t) {
 
 	// type
 
-	t.throws(() => { schema(false).create({ b: 5 }); });
-	t.throws(() => { schema(false).create({ b: 5.5 }); });
-	t.throws(() => { schema(false).create({ b: 'str' }); });
-	t.throws(() => { schema(false).create({ b: {} }); });
+	throwsCode('notBool', () => { schema(false).create({ b: 5 }); });
+	throwsCode('notBool', () => { schema(false).create({ b: 5.5 }); });
+	throwsCode('notBool', () => { schema(false).create({ b: 'str' }); });
+	throwsCode('notBool', () => { schema(false).create({ b: {} }); });
 
 	t.end();
 });

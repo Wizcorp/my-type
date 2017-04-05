@@ -16,11 +16,12 @@ function getType(value) {
 
 
 class MyTypeError extends TypeError {
-	constructor(message, value) {
+	constructor(message, value, code) {
 		super(message);
 
 		this.name = 'MyTypeError';
 		this.value = value;
+		this.code = code;
 
 		this._baseMessage = message;
 		this._valueName = '';
@@ -51,20 +52,18 @@ class MyTypeError extends TypeError {
 
 
 class Test {
-	constructor(failure, message, userLabel) {
+	constructor(failure, message, code) {
+		if (code && typeof code !== 'number' && typeof code !== 'string') {
+			throw new MyTypeError('The given error code must be a string or number (found: %type)', code);
+		}
+
 		this.failure = failure;
-		this.message = message;
-		this.userLabel = userLabel;
+		this.message = JSON.stringify(message);
+		this.code = code ? JSON.stringify(code) : 'undefined';
 	}
 
 	toString() {
-		let message = this.message;
-
-		if (this.userLabel) {
-			message = `${message} (${this.userLabel})`;
-		}
-
-		return `  if (${this.failure}) { throw new MyTypeError(${JSON.stringify(message)}, value); }`;
+		return `  if (${this.failure}) { throw new MyTypeError(${this.message}, value, ${this.code}); }`;
 	}
 }
 
@@ -84,8 +83,8 @@ class Type {
 		return this;
 	}
 
-	addTest(failure, message, userLabel) {
-		this.tests.push(new Test(failure, message, userLabel));
+	addTest(failure, message, code) {
+		this.tests.push(new Test(failure, message, code));
 		this.assertFn = undefined;
 	}
 
@@ -112,7 +111,7 @@ class Type {
 
 
 class ScalarType extends Type {
-	values(values, userLabel) {
+	values(values, code) {
 		if (!Array.isArray(values)) {
 			throw new MyTypeError('The given values are not in an array (found: %type)', values);
 		}
@@ -127,7 +126,7 @@ class ScalarType extends Type {
 
 		values = JSON.stringify(values);
 
-		this.addTest(`!${values}.includes(value)`, `%name must be one of ${values}`, userLabel);
+		this.addTest(`!${values}.includes(value)`, `%name must be one of ${values}`, code);
 		this.assertDefaultValue();
 
 		return this;
@@ -147,18 +146,18 @@ class ScalarType extends Type {
 
 
 class StringType extends ScalarType {
-	constructor() {
+	constructor(code) {
 		super();
-		this.addTest("typeof value !== 'string'", '%name is not a string (found: %type)');
+		this.addTest("typeof value !== 'string'", '%name is not a string (found: %type)', code);
 	}
 
-	length(min, max, userLabel) {
+	length(min, max, code) {
 		if (min !== null && min !== undefined) {
 			if (!Number.isInteger(min)) {
 				throw new MyTypeError('The min-length is not an integer (found: %type "%value")', min);
 			}
 
-			this.addTest(`value.length < ${min}`, `%name string length must be >= ${min} (found: %length)`, userLabel);
+			this.addTest(`value.length < ${min}`, `%name string length must be >= ${min} (found: %length)`, code);
 		}
 
 		if (max !== null && max !== undefined) {
@@ -166,7 +165,7 @@ class StringType extends ScalarType {
 				throw new MyTypeError('The max-length is not an integer (found: %type "%value")', max);
 			}
 
-			this.addTest(`value.length > ${max}`, `%name string length must be <= ${max} (found: %length)`, userLabel);
+			this.addTest(`value.length > ${max}`, `%name string length must be <= ${max} (found: %length)`, code);
 		}
 
 		this.assertDefaultValue();
@@ -174,13 +173,13 @@ class StringType extends ScalarType {
 		return this;
 	}
 
-	regexp(re, userLabel) {
+	regexp(re, code) {
 		if (!(re instanceof RegExp)) {
 			throw new MyTypeError('The value provided is not a regular expression (found: %type "%value")', re);
 		}
 
 		re = re.toString();
-		this.addTest(`!${re}.test(value)`, `%name does not match regular expression: ${re}`, userLabel);
+		this.addTest(`!${re}.test(value)`, `%name does not match regular expression: ${re}`, code);
 
 		this.assertDefaultValue();
 
@@ -190,27 +189,27 @@ class StringType extends ScalarType {
 
 
 class NumberType extends ScalarType {
-	constructor() {
+	constructor(code) {
 		super();
-		this.addTest("typeof value !== 'number'", '%name is not a number (found: %type))');
-		this.addTest("value !== value", '%name is NaN');
+		this.addTest("typeof value !== 'number'", '%name is not a number (found: %type))', code);
+		this.addTest('value !== value', '%name is NaN', code);
 	}
 
-	range(min, max, userLabel) {
+	range(min, max, code) {
 		if (min !== null && min !== undefined && min !== -Infinity) {
-			if (typeof min !== 'number' || min !== min) {
+			if (typeof min !== 'number' || min !== min) { // eslint-disable-line no-self-compare
 				throw new MyTypeError('The min-value is not a number (found: %type "%value")', min);
 			}
 
-			this.addTest(`value < ${min}`, `%name must be >= ${min} (found: %value)`, userLabel);
+			this.addTest(`value < ${min}`, `%name must be >= ${min} (found: %value)`, code);
 		}
 
 		if (max !== null && max !== undefined && max !== Infinity) {
-			if (typeof max !== 'number' || max !== max) {
+			if (typeof max !== 'number' || max !== max) { // eslint-disable-line no-self-compare
 				throw new MyTypeError('The max-value is not a number (found: %type "%value")', max);
 			}
 
-			this.addTest(`value > ${max}`, `%name must be <= ${max} (found: %value)`, userLabel);
+			this.addTest(`value > ${max}`, `%name must be <= ${max} (found: %value)`, code);
 		}
 
 		this.assertDefaultValue();
@@ -221,18 +220,18 @@ class NumberType extends ScalarType {
 
 
 class IntType extends ScalarType {
-	constructor() {
+	constructor(code) {
 		super();
-		this.addTest('!Number.isInteger(value)', '%name is not an integer (found: %type)');
+		this.addTest('!Number.isInteger(value)', '%name is not an integer (found: %type)', code);
 	}
 
-	range(min, max, userLabel) {
+	range(min, max, code) {
 		if (min !== null && min !== undefined && min !== -Infinity) {
 			if (!Number.isInteger(min)) {
 				throw new MyTypeError('The min-value is not an integer (found: %type "%value")', min);
 			}
 
-			this.addTest(`value < ${min}`, `%name must be >= ${min} (found: %value)`, userLabel);
+			this.addTest(`value < ${min}`, `%name must be >= ${min} (found: %value)`, code);
 		}
 
 		if (max !== null && max !== undefined && max !== Infinity) {
@@ -240,7 +239,7 @@ class IntType extends ScalarType {
 				throw new MyTypeError('The max-value is not an integer (found: %type "%value")', max);
 			}
 
-			this.addTest(`value > ${max}`, `%name must be <= ${max} (found: %value)`, userLabel);
+			this.addTest(`value > ${max}`, `%name must be <= ${max} (found: %value)`, code);
 		}
 
 		this.assertDefaultValue();
@@ -251,9 +250,9 @@ class IntType extends ScalarType {
 
 
 class BooleanType extends ScalarType {
-	constructor() {
+	constructor(code) {
 		super();
-		this.addTest("typeof value !== 'boolean'", '%name is not a boolean (found: %type)');
+		this.addTest("typeof value !== 'boolean'", '%name is not a boolean (found: %type)', code);
 	}
 }
 
@@ -297,10 +296,10 @@ class MixedType extends Type {
 
 
 class ArrayType extends Type {
-	constructor(elementType) {
+	constructor(elementType, code) {
 		super();
 		this.elementType = elementType;
-		this.addTest('!Array.isArray(value)', '%name is not an array (found: %type)');
+		this.addTest('!Array.isArray(value)', '%name is not an array (found: %type)', code);
 
 		if (!(elementType instanceof Type)) {
 			throw new MyTypeError(`Type for elements is not a real type`, elementType);
@@ -318,13 +317,13 @@ class ArrayType extends Type {
 		return this;
 	}
 
-	length(min, max, userLabel) {
+	length(min, max, code) {
 		if (typeof min === 'number') {
-			this.addTest(`value.length < ${min}`, `%name array length must be >= ${min} (found: %length)`, userLabel);
+			this.addTest(`value.length < ${min}`, `%name array length must be >= ${min} (found: %length)`, code);
 		}
 
 		if (typeof max === 'number') {
-			this.addTest(`value.length > ${max}`, `%name array length must be <= ${max} (found: %length)`, userLabel);
+			this.addTest(`value.length > ${max}`, `%name array length must be <= ${max} (found: %length)`, code);
 		}
 
 		this.assertDefaultValue();
@@ -354,9 +353,9 @@ class ArrayType extends Type {
 
 
 class ObjectType extends Type {
-	constructor(propTypes) {
+	constructor(propTypes, code) {
 		super();
-		this.addTest("value === null || typeof value !== 'object'", '%name is not an object (found: %type)');
+		this.addTest("value === null || typeof value !== 'object'", '%name is not an object (found: %type)', code);
 		this.propTypes = propTypes;
 		this.propNames = Object.keys(propTypes);
 
@@ -378,14 +377,39 @@ class ObjectType extends Type {
 			return;
 		}
 
-		for (const prop of this.propNames) {
+		const propNames = Object.keys(value);
+
+		for (const prop of propNames) {
+			const type = this.propTypes[prop];
+
+			if (!type) {
+				throw new MyTypeError(`Unknown property "${prop}"`, value[prop]);
+			}
+
 			try {
-				this.propTypes[prop].assert(value[prop]);
+				type.assert(value[prop]);
 			} catch (error) {
 				if (error.addParentProperty) {
 					error.addParentProperty(prop);
 				}
 				throw error;
+			}
+		}
+
+		for (const prop of this.propNames) {
+			if (!value.hasOwnProperty(prop)) {
+				// wasn't updated through the data object
+
+				const type = this.propTypes[prop];
+
+				try {
+					type.assert(value[prop]);
+				} catch (error) {
+					if (error.addParentProperty) {
+						error.addParentProperty(prop);
+					}
+					throw error;
+				}
 			}
 		}
 	}
@@ -418,103 +442,62 @@ class ObjectType extends Type {
 		}
 
 		const obj = this.createFn();
-		this.update(obj, data, true);
+		return this.update(obj, data);
+	}
+
+	update(obj, data) {
+		if (!obj || typeof obj !== 'object') {
+			// allow the not-an-object assertion failure to kick in
+			this.assert(obj);
+		}
+
+		if (!data || typeof data !== 'object') {
+			// allow the not-an-object assertion failure to kick in
+			this.assert(data);
+		}
+
+		obj = this._merge(obj, data);
+		this.assert(obj);
 		return obj;
 	}
 
-	_assertUpdate(obj, data, testForMissingProperties) {
-		if (typeof obj !== 'object') {
-			throw new MyTypeError('The given object to update is not an object-type (found: %type)', obj);
+	_merge(oldValue, newValue) {
+		if (!newValue || typeof newValue !== 'object' || Array.isArray(newValue)) {
+			return newValue;
 		}
 
-		if (typeof data !== 'object') {
-			throw new TypeError('The given update-data is not an object-type (found: %type)', data);
+		if (!oldValue || typeof oldValue !== 'object') {
+			return newValue;
 		}
 
-		const propNames = Object.keys(data);
+		// merge oldValue with newValue and return oldValue
 
+		const propNames = Object.keys(newValue);
 		for (const prop of propNames) {
-			const type = this.propTypes[prop];
-
-			if (!type) {
-				throw new MyTypeError(`Unknown property "${prop}"`, data[prop]);
-			}
-
-			try {
-				if (type._assertUpdate) {
-					type._assertUpdate(obj[prop], data[prop], testForMissingProperties);
-				} else {
-					type.assert(data[prop]);
-				}
-			} catch (error) {
-				if (error.addParentProperty) {
-					error.addParentProperty(prop);
-				}
-				throw error;
-			}
+			oldValue[prop] = this._merge(oldValue[prop], newValue[prop]);
 		}
 
-		if (testForMissingProperties) {
-			for (const prop of this.propNames) {
-				if (!data.hasOwnProperty(prop)) {
-					// wasn't updated through the data object
-
-					const type = this.propTypes[prop];
-
-					try {
-						type.assert(obj[prop]);
-					} catch (error) {
-						if (error.addParentProperty) {
-							error.addParentProperty(prop);
-						}
-						throw error;
-					}
-				}
-			}
-		}
-	}
-
-	_applyUpdate(obj, data) {
-		const propNames = Object.keys(data);
-
-		for (const prop of propNames) {
-			const type = this.propTypes[prop];
-
-			if (type._applyUpdate) {
-				type._applyUpdate(obj[prop], data[prop]);
-			} else {
-				obj[prop] = data[prop];
-			}
-		}
-	}
-
-	update(obj, data, testForMissingProperties) {
-		if (data && obj) {
-			this._assertUpdate(obj, data, testForMissingProperties || false);
-			this._applyUpdate(obj, data);
-		}
-
-		return obj;
+		return oldValue;
 	}
 }
 
 
 exports.MyTypeError = MyTypeError;
 
-exports.string = function () {
-	return new StringType();
+exports.string = function (code) {
+	return new StringType(code);
 };
 
-exports.number = function () {
-	return new NumberType();
+exports.number = function (code) {
+	return new NumberType(code);
 };
 
-exports.int = function () {
-	return new IntType();
+exports.int = function (code) {
+	return new IntType(code);
 };
 
-exports.bool = function () {
-	return new BooleanType();
+exports.bool = function (code) {
+	return new BooleanType(code);
 };
 
 exports.any = function () {
@@ -525,10 +508,10 @@ exports.mixed = function (types) {
 	return new MixedType(types);
 };
 
-exports.object = function (propTypes) {
-	return new ObjectType(propTypes);
+exports.object = function (propTypes, code) {
+	return new ObjectType(propTypes, code);
 };
 
-exports.array = function (elementType) {
-	return new ArrayType(elementType);
+exports.array = function (elementType, code) {
+	return new ArrayType(elementType, code);
 };

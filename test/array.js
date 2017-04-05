@@ -6,7 +6,7 @@ test('Arrays', function (t) {
 	const { object, array, string } = require('..');
 
 	function schema(optional, defaultValue, length) {
-		const a = array(string());
+		const a = array(string('notString'), 'notArray');
 
 		if (optional) {
 			a.optional();
@@ -17,10 +17,26 @@ test('Arrays', function (t) {
 		}
 
 		if (length) {
-			a.length(length[0], length[1]);
+			a.length(length[0], length[1], 'badLength');
 		}
 
 		return object({ a });
+	}
+
+	function throwsCode(code, fn) {
+		let error;
+
+		try {
+			fn();
+		} catch (err) {
+			error = err;
+		}
+
+		if (error) {
+			t.equal(error.code, code);
+		} else {
+			t.fail('Expected function to throw: ' + fn);
+		}
 	}
 
 	// optional
@@ -37,13 +53,12 @@ test('Arrays', function (t) {
 	// length
 
 	t.deepEqual(schema(false, null, [0, 10]).create({ a: ['a'] }), { a: ['a'] });
-	t.throws(() => { schema(false, null, [0, 1]).create({ a: ['a', 'b', 'c'] }); });
+	throwsCode('badLength', () => { schema(false, null, [0, 1]).create({ a: ['a', 'b', 'c'] }); });
 
 	// type
 
-	t.throws(() => { schema(false).create({ a: 'str' }); });
-	t.throws(() => { schema(false).create({ a: [123] }); });
-	t.throws(() => { array(5); });
+	throwsCode('notArray', () => { schema(false).create({ a: 'str' }); });
+	throwsCode('notString', () => { schema(false).create({ a: [123] }); });
 
 	t.end();
 });
