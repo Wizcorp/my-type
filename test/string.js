@@ -52,7 +52,6 @@ test('Strings', function (t) {
 	t.throws(() => { schema(false, null, [1, 2]).create({ s: '' }); });
 	t.throws(() => { schema(false, null, [0.5, 1]); });
 	t.throws(() => { schema(false, null, [0, 1.5]); });
-
 	// values
 
 	t.deepEqual(schema(false, null, null, ['a', 'b', 'c']).create({ s: 'b' }), { s: 'b' });

@@ -3,13 +3,17 @@
 const test = require('tape');
 
 test('Objects', function (t) {
-	const { object, int } = require('..');
+	const { object, int, string, bool } = require('..');
 
-	function schema(optional, props) {
+	function schema(optional, props, dict) {
 		const o = object(props, 'notObject');
 
 		if (optional) {
 			o.optional();
+		}
+
+		if (dict) {
+			o.dictionary(dict.prop, dict.value);
 		}
 
 		return object({ o });
@@ -66,6 +70,22 @@ test('Objects', function (t) {
 	// property deletion
 
 	t.deepEqual(schema(false, propsOptional).update({ o: { foo: 1, bar: 2 } }, { o: { foo: undefined } }), { o: { foo: undefined, bar: 2 } });
+
+	// dictionary properties
+
+	const dictPropertyType = string().length(1, Infinity);
+	const dictValueType = bool();
+	const dict = { prop: dictPropertyType, value: dictValueType };
+
+	t.deepEqual(schema(false, propsWithDefault, dict).create({}), { o: { foo: 3, bar: 5 } })
+	t.deepEqual(schema(false, propsWithDefault, dict).create({ o: { a: true, b: false } }), { o: { foo: 3, bar: 5, a: true, b: false } })
+	t.throws(() => { schema(true, propsWithDefault, dict).create({ o: { '': true } }); });
+	t.throws(() => { schema(true, propsWithDefault, dict).create({ o: { a: 'str' } }); });
+	t.throws(() => { schema(true, propsWithDefault, dict).create({ o: { a: 3 } }); });
+	t.throws(() => { schema(true, propsWithDefault, dict).create({ o: { a: [] } }); });
+	t.throws(() => { schema(true, propsWithDefault, dict).create({ o: { a: {} } }); });
+	t.throws(() => { schema(true, propsWithDefault, { prop: 'foo', value: dictValueType }); });
+	t.throws(() => { schema(true, propsWithDefault, { prop: dictPropertyType, value: 'foo' }); });
 
 	t.end();
 });

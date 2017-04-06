@@ -59,6 +59,9 @@ test('Arrays', function (t) {
 
 	t.deepEqual(schema(false, null, [0, 10]).create({ a: ['a'] }), { a: ['a'] });
 	throwsCode('badLength', () => { schema(false, null, [0, 1]).create({ a: ['a', 'b', 'c'] }); });
+	throwsCode('badLength', () => { schema(false, null, [2, 3]).create({ a: ['a'] }); });
+	t.throws(() => { schema(false, null, [0.5, 1]); });
+	t.throws(() => { schema(false, null, [0, 1.5]); });
 
 	// type
 

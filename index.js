@@ -152,7 +152,7 @@ class StringType extends ScalarType {
 	}
 
 	length(min, max, code) {
-		if (min !== null && min !== undefined) {
+		if (min !== null && min !== undefined && min !== 0) {
 			if (!Number.isInteger(min)) {
 				throw new MyTypeError('The min-length is not an integer (found: %type "%value")', min);
 			}
@@ -160,7 +160,7 @@ class StringType extends ScalarType {
 			this.addTest(`value.length < ${min}`, `%name string length must be >= ${min} (found: %length)`, code);
 		}
 
-		if (max !== null && max !== undefined) {
+		if (max !== null && max !== undefined && max !== Infinity) {
 			if (!Number.isInteger(max)) {
 				throw new MyTypeError('The max-length is not an integer (found: %type "%value")', max);
 			}
@@ -318,11 +318,19 @@ class ArrayType extends Type {
 	}
 
 	length(min, max, code) {
-		if (typeof min === 'number') {
+		if (min !== null && min !== undefined && min !== 0) {
+			if (!Number.isInteger(min)) {
+				throw new MyTypeError('The min-length is not an integer (found: %type "%value")', min);
+			}
+
 			this.addTest(`value.length < ${min}`, `%name array length must be >= ${min} (found: %length)`, code);
 		}
 
-		if (typeof max === 'number') {
+		if (max !== null && max !== undefined && max !== Infinity) {
+			if (!Number.isInteger(max)) {
+				throw new MyTypeError('The max-length is not an integer (found: %type "%value")', max);
+			}
+
 			this.addTest(`value.length > ${max}`, `%name array length must be <= ${max} (found: %length)`, code);
 		}
 
@@ -363,6 +371,7 @@ class ObjectType extends Type {
 
 		this.propTypes = propTypes;
 		this.propNames = Object.keys(propTypes);
+		this.dict = null;
 
 		for (const prop of this.propNames) {
 			const type = propTypes[prop];
@@ -373,6 +382,34 @@ class ObjectType extends Type {
 		}
 
 		this.createFn = undefined;
+	}
+
+	dictionary(propertyType, valueType) {
+		if (!(propertyType instanceof Type)) {
+			throw new MyTypeError(`Property-type is not a real type`, propertyType);
+		}
+
+		if (!(valueType instanceof Type)) {
+			throw new MyTypeError(`Value-type is not a real type`, valueType);
+		}
+
+		this.dict = { propertyType, valueType };
+		return this;
+	}
+
+	_assertProperty(value, name) {
+		const type = this.propTypes[name];
+
+		if (type) {
+			type.assert(value[name]);
+		} else {
+			if (!this.dict) {
+				throw new MyTypeError(`Unknown property "${name}"`, value[name]);
+			}
+
+			this.dict.propertyType.assert(name);
+			this.dict.valueType.assert(value[name]);
+		}
 	}
 
 	assert(value) {
@@ -387,14 +424,8 @@ class ObjectType extends Type {
 		const propNames = Object.keys(value);
 
 		for (const prop of propNames) {
-			const type = this.propTypes[prop];
-
-			if (!type) {
-				throw new MyTypeError(`Unknown property "${prop}"`, value[prop]);
-			}
-
 			try {
-				type.assert(value[prop]);
+				this._assertProperty(value, prop);
 			} catch (error) {
 				if (error.addParentProperty) {
 					error.addParentProperty(prop);

@@ -59,32 +59,32 @@ const { string, number, int, bool, mixed, any, array, object } = require('my-typ
 
 ### Type creation
 
-* `string([code]);`: creates a **string** type with an error code for type violations
-* `number([code]);`: creates a **number** type with an error code for type violations
-* `int([code]);`: creates an **integer** type with an error code for type violations
-* `bool([code]);`: creates a **boolean** type with an error code for type violations
-* `mixed(types);`: creates a type that represents **any one of the given types**
-* `any();`: creates a **wildcard** type
-* `array(type, [code]);`: creates an **array** type with children of a given type and an error code for type violations
-* `object(props, [code]);`: creates an **object** type with properties of given types and an error code for type violations
+* `string([code])`: creates a **string** type with an error code for type violations
+* `number([code])`: creates a **number** type with an error code for type violations
+* `int([code])`: creates an **integer** type with an error code for type violations
+* `bool([code])`: creates a **boolean** type with an error code for type violations
+* `mixed(types)`: creates a type that represents **any one of the given types**
+* `any()`: creates a **wildcard** type
+* `array(type, [code])`: creates an **array** type with children of a given type and an error code for type violations
+* `object(props, [code])`: creates an **object** type with properties of given types and an error code for type violations
 
 ### Default values (all types, except object)
 
 You can set up all types to have a default value.
 
-* `string().default('Hello world');`: creates a string type with a default value
+* `string().default('Hello world')`: creates a string type with a default value
 
 If you want an object to be created according to a default format, simply set the
 defaults on its properties.
 
 ### Set up a type to be optional (all types)
 
-* `string().optional();`: creates a string type that does not have to be set (ie: undefined and null are allowed)
+* `string().optional()`: creates a string type that does not have to be set (ie: undefined and null are allowed)
 
 ### Constraints
 
 * `string().length(min, max, [code])`: creates a string type with a min/max length
-* `string().regexp(regexp, [code]);`: creates a string type with a regular expression constraint
+* `string().regexp(regexp, [code])`: creates a string type with a regular expression constraint
 * `string().values(values, [code])`: creates a string type with a limited set of allowed values
 * `number().range(min, max, [code])`: creates a number type with a min/max value
 * `number().values(values, [code])`: creates a number type with a limited set of allowed values
@@ -92,6 +92,7 @@ defaults on its properties.
 * `int().values(values, [code])`: creates an integer type with a limited set of allowed values
 * `bool().values(values, [code])`: creates a boolean type with a limited set of allowed values
 * `array(type).length(min, max, [code])`: creates an array type with a min/max length
+* `object(props).dictionary(keyType, valueType)`: creates an object that allows keys by any name, but with strict key and value types
 
 Every constraint function accepts an extra optional `code` argument. When the constraint is violated, this code will be
 available on your error object as `error.code`. Use either strings or numbers.
@@ -124,6 +125,13 @@ object({
 });
 ```
 
+### Dictionaries:
+
+```js
+object({
+	_version: int(),
+}).dictionary(string(), mixed([number(), string()]));
+```
 
 ## Creating and updating objects
 
