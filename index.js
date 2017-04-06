@@ -356,6 +356,11 @@ class ObjectType extends Type {
 	constructor(propTypes, code) {
 		super();
 		this.addTest("value === null || typeof value !== 'object'", '%name is not an object (found: %type)', code);
+
+		if (!propTypes || typeof propTypes !== 'object') {
+			throw new MyTypeError('Expected an object for properties (found: %type)', propTypes);
+		}
+
 		this.propTypes = propTypes;
 		this.propNames = Object.keys(propTypes);
 
@@ -377,6 +382,8 @@ class ObjectType extends Type {
 			return;
 		}
 
+		// test provided properties
+
 		const propNames = Object.keys(value);
 
 		for (const prop of propNames) {
@@ -396,10 +403,10 @@ class ObjectType extends Type {
 			}
 		}
 
+		// test properties that should exist but were not present in the given value
+
 		for (const prop of this.propNames) {
 			if (!value.hasOwnProperty(prop)) {
-				// wasn't updated through the data object
-
 				const type = this.propTypes[prop];
 
 				try {

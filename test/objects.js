@@ -33,11 +33,20 @@ test('Objects', function (t) {
 
 	const props = { foo: int('notInt'), bar: int('notInt') };
 	const propsWithDefault = { foo: int().default(3), bar: int().default(5) };
+	const propsOptional = { foo: int().optional(), bar: int().optional() };
+
+	// creation
+
+	t.throws(() => { object(123); });
 
 	// optional
 
 	t.deepEqual(schema(true, props).create({}), { o: undefined });
 	t.throws(() => { schema(false, props).create({}); });
+
+	// assert
+
+	t.throws(() => { schema(false, props).assert({ o: {} }); });
 
 	// properties
 
@@ -55,8 +64,6 @@ test('Objects', function (t) {
 	t.deepEqual(schema(false, propsWithDefault).create({ o: { foo: 3 } }), { o: { foo: 3, bar: 5 } });
 
 	// property deletion
-
-	const propsOptional = { foo: int().optional(), bar: int().optional() };
 
 	t.deepEqual(schema(false, propsOptional).update({ o: { foo: 1, bar: 2 } }, { o: { foo: undefined } }), { o: { foo: undefined, bar: 2 } });
 

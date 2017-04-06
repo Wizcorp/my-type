@@ -39,6 +39,11 @@ test('Arrays', function (t) {
 		}
 	}
 
+	// creation
+
+	t.throws(() => { array(123); });
+	t.throws(() => { array(null); });
+
 	// optional
 
 	t.deepEqual(schema(true).create({}), { a: undefined });
