@@ -129,7 +129,7 @@ object({
 
 ```js
 object({
-	_version: int(),
+	_version: int()
 }).dictionary(string(), mixed([number(), string()]));
 ```
 
