@@ -4,7 +4,7 @@
   "description": "Yet another JS schema assertion library",
   "main": "index.js",
   "scripts": {
-    "test": "eslint *.js && tape 'test/*.js'",
+    "test": "eslint *.js && tape 'test/*.js' | tap-dot",
     "cover": "nyc tape 'test/*.js'"
   },
   "author": "Ron Korving <rkorving@wizcorp.jp>",
@@ -15,6 +15,7 @@
   },
   "devDependencies": {
     "eslint": "^3.14.0",
+    "tap-dot": "^1.0.5",
     "tape": "^4.6.3",
     "uuid": "^3.0.1"
   }
