@@ -226,8 +226,63 @@ formats:
 Example:
 
 ```js
+const { object, array, string, number, int, describe } = require('my-type');
 
+const actor = object({
+	id:     int().range(1, Infinity, 'badId'),
+	name:   string().length(3, Infinity, 'badNameLength'),
+	birthday: string().regexp(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/, 'badBirthday')
+});
 
+const movie = object({
+	id:        int().range(1, Infinity, 'badId'),
+	name:      string().length(3, 100, 'badNameLength'),
+	year:      int().range(1900, (new Date).getFullYear(), 'badYear'),
+	rating:    number().optional().range(0, 1, 'badPercentage'),
+	actors:    array(actor)
+});
+
+console.log(describe(movie, 'ascii', ['path', 'code', 'message']));
+```
+
+Output:
+
+```
++---------------------------------------------------------------------------------------------------------------------+
+| path                   | code          | message                                                                    |
++---------------------------------------------------------------------------------------------------------------------+
+|                        |               | Value is not optional                                                      |
+|                        |               | Value is not an object (found: %type)                                      |
+| id                     |               | id is not optional                                                         |
+| id                     |               | id is not an integer (found: %type)                                        |
+| id                     | badId         | id must be >= 1 (found: %value)                                            |
+| name                   |               | name is not optional                                                       |
+| name                   |               | name is not a string (found: %type)                                        |
+| name                   | badNameLength | name string length must be >= 3 (found: %length)                           |
+| name                   | badNameLength | name string length must be <= 100 (found: %length)                         |
+| year                   |               | year is not optional                                                       |
+| year                   |               | year is not an integer (found: %type)                                      |
+| year                   | badYear       | year must be >= 1900 (found: %value)                                       |
+| year                   | badYear       | year must be <= 2017 (found: %value)                                       |
+| rating                 |               | rating is not a number (found: %type))                                     |
+| rating                 |               | rating is NaN                                                              |
+| rating                 | badPercentage | rating must be >= 0 (found: %value)                                        |
+| rating                 | badPercentage | rating must be <= 1 (found: %value)                                        |
+| actors                 |               | actors is not optional                                                     |
+| actors                 |               | actors is not an array (found: %type)                                      |
+| actors[index]          |               | actors[index] is not optional                                              |
+| actors[index]          |               | actors[index] is not an object (found: %type)                              |
+| actors[index].id       |               | id is not optional                                                         |
+| actors[index].id       |               | id is not an integer (found: %type)                                        |
+| actors[index].id       | badId         | id must be >= 1 (found: %value)                                            |
+| actors[index].name     |               | name is not optional                                                       |
+| actors[index].name     |               | name is not a string (found: %type)                                        |
+| actors[index].name     | badNameLength | name string length must be >= 3 (found: %length)                           |
+| actors[index].birthday |               | birthday is not optional                                                   |
+| actors[index].birthday |               | birthday is not a string (found: %type)                                    |
+| actors[index].birthday | badBirthday   | birthday does not match regular expression: /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/ |
++---------------------------------------------------------------------------------------------------------------------+
+```
 
 ## License
 
