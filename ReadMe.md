@@ -214,6 +214,21 @@ And additionally:
 - code: The code that was registered with the type or the constraint (or `undefined` if none was provided).
 
 
+## Error code extraction
+
+If you want to populate a list of possible error codes from your code base, you can easily do this in the following
+formats:
+
+* ascii: Human readable, pretty printed and aligned ascii output.
+* csv: CSV output using double quotes to wrap fields, commas to separate them and including a single header-row.
+* js: An array of JS objects that contain all the information.
+
+Example:
+
+```js
+
+
+
 ## License
 
 MIT

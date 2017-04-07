@@ -2,7 +2,7 @@
 
 const test = require('tape');
 
-test('Mixed', function (t) {
+test('Mixed', (t) => {
 	const { object, mixed, string, int } = require('..');
 
 	function schema(optional, types) {

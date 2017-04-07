@@ -2,7 +2,7 @@
 
 const test = require('tape');
 
-test('Objects', function (t) {
+test('Objects', (t) => {
 	const { object, int, string, bool } = require('..');
 
 	function schema(optional, props, dict) {
@@ -31,7 +31,7 @@ test('Objects', function (t) {
 		if (error) {
 			t.equal(error.code, code);
 		} else {
-			t.fail('Expected function to throw: ' + fn);
+			t.fail(`Expected function to throw: ${fn}`);
 		}
 	}
 
@@ -77,8 +77,8 @@ test('Objects', function (t) {
 	const dictValueType = bool();
 	const dict = { prop: dictPropertyType, value: dictValueType };
 
-	t.deepEqual(schema(false, propsWithDefault, dict).create({}), { o: { foo: 3, bar: 5 } })
-	t.deepEqual(schema(false, propsWithDefault, dict).create({ o: { a: true, b: false } }), { o: { foo: 3, bar: 5, a: true, b: false } })
+	t.deepEqual(schema(false, propsWithDefault, dict).create({}), { o: { foo: 3, bar: 5 } });
+	t.deepEqual(schema(false, propsWithDefault, dict).create({ o: { a: true, b: false } }), { o: { foo: 3, bar: 5, a: true, b: false } });
 	t.throws(() => { schema(true, propsWithDefault, dict).create({ o: { '': true } }); });
 	t.throws(() => { schema(true, propsWithDefault, dict).create({ o: { a: 'str' } }); });
 	t.throws(() => { schema(true, propsWithDefault, dict).create({ o: { a: 3 } }); });

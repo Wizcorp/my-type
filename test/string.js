@@ -2,7 +2,7 @@
 
 const test = require('tape');
 
-test('Strings', function (t) {
+test('Strings', (t) => {
 	const { object, string } = require('..');
 
 	function schema(optional, defaultValue, length, values, regexp) {

@@ -3,8 +3,8 @@
 const test = require('tape');
 const uuid = require('uuid/v4');
 
-test('Create and update a big object', function (t) {
-	const { object, array, string, number, int, bool, mixed, any } = require('..');
+test('Create and update a big object', (t) => {
+	const { object, array, string, number, int, bool, mixed } = require('..');
 
 	const userIdType = string().regexp(/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/, 'UUID');
 

@@ -1,0 +1,4 @@
+rules:
+  brace-style: 0
+  max-statements-per-line: 0
+  max-len: 0

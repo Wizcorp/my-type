@@ -2,7 +2,7 @@
 
 const test = require('tape');
 
-test('Integers', function (t) {
+test('Integers', (t) => {
 	const { object, int } = require('..');
 
 	function schema(optional, defaultValue, range, values) {
@@ -39,7 +39,7 @@ test('Integers', function (t) {
 		if (error) {
 			t.equal(error.code, code);
 		} else {
-			t.fail('Expected function to throw: ' + fn);
+			t.fail(`Expected function to throw: ${fn}`);
 		}
 	}
 

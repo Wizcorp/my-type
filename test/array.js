@@ -2,7 +2,7 @@
 
 const test = require('tape');
 
-test('Arrays', function (t) {
+test('Arrays', (t) => {
 	const { object, array, string } = require('..');
 
 	function schema(optional, defaultValue, length) {
@@ -35,7 +35,7 @@ test('Arrays', function (t) {
 		if (error) {
 			t.equal(error.code, code);
 		} else {
-			t.fail('Expected function to throw: ' + fn);
+			t.fail(`Expected function to throw: ${fn}`);
 		}
 	}
 

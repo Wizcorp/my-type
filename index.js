@@ -1,5 +1,11 @@
 'use strict';
 
+const describers = {
+	ascii: require('./describers/ascii'),
+	csv: require('./describers/csv'),
+	js: require('./describers/js')
+};
+
 const deepCopy = require('deep-copy');
 
 function getType(value) {
@@ -94,18 +100,41 @@ class Type {
 		}
 	}
 
+	getTests() {
+		const optionalTest = this.isOptional ?
+			'  if (value === undefined || value === null) { return; }\n' :
+			new Test('value === undefined || value === null', '%name is not optional');
+
+		return [optionalTest].concat(this.tests);
+	}
+
 	assert(value) {
 		if (!this.assertFn) {
-			const optionalTest = this.isOptional ?
-				'  if (value === undefined || value === null) { return; }\n' :
-				new Test('value === undefined || value === null', '%name is not optional');
-
-			const tests = [optionalTest].concat(this.tests);
+			const tests = this.getTests();
 
 			this.assertFn = new Function('value', 'MyTypeError', tests.join('\n')); // eslint-disable-line no-new-func
 		}
 
 		this.assertFn(value, MyTypeError);
+	}
+
+	describe(path, output) {
+		const tests = this.getTests();
+
+		for (const test of tests) {
+			if (test instanceof Test) {
+				const code = test.code === 'undefined' ? null : JSON.parse(test.code);
+				let message = JSON.parse(test.message);
+
+				if (path.length === 0) {
+					message = message.replace('%name', 'Value');
+				} else {
+					message = message.replace('%name', path[path.length - 1]);
+				}
+
+				output.push({ path, failureCondition: test.failure, message, code });
+			}
+		}
 	}
 }
 
@@ -357,6 +386,17 @@ class ArrayType extends Type {
 			}
 		}
 	}
+
+	describe(path, output) {
+		super.describe(path, output);
+
+		path = path.slice();
+		if (path.length > 0) {
+			path[path.length - 1] += '[index]';
+		}
+
+		this.elementType.describe(path, output);
+	}
 }
 
 
@@ -517,6 +557,15 @@ class ObjectType extends Type {
 
 		return oldValue;
 	}
+
+	describe(path, output) {
+		super.describe(path, output);
+
+		for (const prop of this.propNames) {
+			const type = this.propTypes[prop];
+			type.describe(path.concat(prop), output);
+		}
+	}
 }
 
 
@@ -552,4 +601,18 @@ exports.object = function (propTypes, code) {
 
 exports.array = function (elementType, code) {
 	return new ArrayType(elementType, code);
+};
+
+
+exports.describe = function (schema, style, fields) {
+	const describer = describers[style];
+	if (!describer) {
+		throw new Error(`No describer "${style}" found`);
+	}
+
+	fields = fields || ['path', 'code', 'message', 'failure condition'];
+
+	const entries = [];
+	schema.describe([], entries);
+	return describer(entries, fields);
 };

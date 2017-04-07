@@ -2,7 +2,7 @@
 
 const test = require('tape');
 
-test('Booleans', function (t) {
+test('Booleans', (t) => {
 	const { object, bool } = require('..');
 
 	function schema(optional, defaultValue, values) {
@@ -35,7 +35,7 @@ test('Booleans', function (t) {
 		if (error) {
 			t.equal(error.code, code);
 		} else {
-			t.fail('Expected function to throw: ' + fn);
+			t.fail(`Expected function to throw: ${fn}`);
 		}
 	}
 
