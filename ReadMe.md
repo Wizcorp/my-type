@@ -83,14 +83,22 @@ defaults on its properties.
 
 ### Constraints
 
+* `string().min(min, [code])`: creates a string type with a minimum length
+* `string().max(max, [code])`: creates a string type with a maximum length
 * `string().length(min, max, [code])`: creates a string type with a min/max length
 * `string().regexp(regexp, [code])`: creates a string type with a regular expression constraint
 * `string().values(values, [code])`: creates a string type with a limited set of allowed values
+* `number().min(min, [code])`: creates a number type with a minimum value
+* `number().max(max, [code])`: creates a number type with a maximum value
 * `number().range(min, max, [code])`: creates a number type with a min/max value
 * `number().values(values, [code])`: creates a number type with a limited set of allowed values
+* `int().min(min, [code])`: creates an integer type with a minimum value
+* `int().max(max, [code])`: creates an integer type with a maximum value
 * `int().range(min, max, [code])`: creates an integer type with a min/max value
 * `int().values(values, [code])`: creates an integer type with a limited set of allowed values
 * `bool().values(values, [code])`: creates a boolean type with a limited set of allowed values
+* `array(type).min(min, [code])`: creates an array type with a minimum length
+* `array(type).max(max, [code])`: creates an array type with a maximum length
 * `array(type).length(min, max, [code])`: creates an array type with a min/max length
 * `object(props).dictionary(keyType, valueType)`: creates an object that allows keys by any name, but with strict key and value types
 
@@ -98,7 +106,7 @@ Every constraint function accepts an extra optional `code` argument. When the co
 available on your error object as `error.code`. Use either strings or numbers.
 
 For `length` and `range` constraints, you can use `-Infinity` or `Infinity` to indicate that there is
-no limit on the lower or upper end.
+no limit on the lower or upper end. Alternatively, you can set pass `null` or `undefined`.
 
 Default, Optional and Constraints can be chained in any order:
 
@@ -229,13 +237,13 @@ Example:
 const { object, array, string, number, int, describe } = require('my-type');
 
 const actor = object({
-	id:     int().range(1, Infinity, 'badId'),
-	name:   string().length(3, Infinity, 'badNameLength'),
+	id:     int().min(1, 'badId'),
+	name:   string().min(3, 'nameTooShort'),
 	birthday: string().regexp(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/, 'badBirthday')
 });
 
 const movie = object({
-	id:        int().range(1, Infinity, 'badId'),
+	id:        int().min(1, 'badId'),
 	name:      string().length(3, 100, 'badNameLength'),
 	year:      int().range(1900, (new Date).getFullYear(), 'badYear'),
 	rating:    number().optional().range(0, 1, 'badPercentage'),
@@ -277,7 +285,7 @@ Output:
 | actors[index].id       | badId         | id must be >= 1 (found: %value)                                            |
 | actors[index].name     |               | name is not optional                                                       |
 | actors[index].name     |               | name is not a string (found: %type)                                        |
-| actors[index].name     | badNameLength | name string length must be >= 3 (found: %length)                           |
+| actors[index].name     | nameTooShort  | name string length must be >= 3 (found: %length)                           |
 | actors[index].birthday |               | birthday is not optional                                                   |
 | actors[index].birthday |               | birthday is not a string (found: %type)                                    |
 | actors[index].birthday | badBirthday   | birthday does not match regular expression: /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/ |

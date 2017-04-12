@@ -182,20 +182,34 @@ class StringType extends ScalarType {
 
 	length(min, max, code) {
 		if (min !== null && min !== undefined && min !== 0) {
-			if (!Number.isInteger(min)) {
-				throw new MyTypeError('The min-length is not an integer (found: %type "%value")', min);
-			}
-
-			this.addTest(`value.length < ${min}`, `%name string length must be >= ${min} (found: %length)`, code);
+			this.min(min, code);
 		}
 
 		if (max !== null && max !== undefined && max !== Infinity) {
-			if (!Number.isInteger(max)) {
-				throw new MyTypeError('The max-length is not an integer (found: %type "%value")', max);
-			}
-
-			this.addTest(`value.length > ${max}`, `%name string length must be <= ${max} (found: %length)`, code);
+			this.max(max, code);
 		}
+
+		return this;
+	}
+
+	min(min, code) {
+		if (!Number.isInteger(min)) {
+			throw new MyTypeError('The min-length is not an integer (found: %type "%value")', min);
+		}
+
+		this.addTest(`value.length < ${min}`, `%name string length must be >= ${min} (found: %length)`, code);
+
+		this.assertDefaultValue();
+
+		return this;
+	}
+
+	max(max, code) {
+		if (!Number.isInteger(max)) {
+			throw new MyTypeError('The max-length is not an integer (found: %type "%value")', max);
+		}
+
+		this.addTest(`value.length > ${max}`, `%name string length must be <= ${max} (found: %length)`, code);
 
 		this.assertDefaultValue();
 
@@ -226,20 +240,34 @@ class NumberType extends ScalarType {
 
 	range(min, max, code) {
 		if (min !== null && min !== undefined && min !== -Infinity) {
-			if (typeof min !== 'number' || min !== min) { // eslint-disable-line no-self-compare
-				throw new MyTypeError('The min-value is not a number (found: %type "%value")', min);
-			}
-
-			this.addTest(`value < ${min}`, `%name must be >= ${min} (found: %value)`, code);
+			this.min(min, code);
 		}
 
 		if (max !== null && max !== undefined && max !== Infinity) {
-			if (typeof max !== 'number' || max !== max) { // eslint-disable-line no-self-compare
-				throw new MyTypeError('The max-value is not a number (found: %type "%value")', max);
-			}
-
-			this.addTest(`value > ${max}`, `%name must be <= ${max} (found: %value)`, code);
+			this.max(max, code);
 		}
+
+		return this;
+	}
+
+	min(min, code) {
+		if (typeof min !== 'number' || min !== min) { // eslint-disable-line no-self-compare
+			throw new MyTypeError('The min-value is not a number (found: %type "%value")', min);
+		}
+
+		this.addTest(`value < ${min}`, `%name must be >= ${min} (found: %value)`, code);
+
+		this.assertDefaultValue();
+
+		return this;
+	}
+
+	max(max, code) {
+		if (typeof max !== 'number' || max !== max) { // eslint-disable-line no-self-compare
+			throw new MyTypeError('The max-value is not a number (found: %type "%value")', max);
+		}
+
+		this.addTest(`value > ${max}`, `%name must be <= ${max} (found: %value)`, code);
 
 		this.assertDefaultValue();
 
@@ -256,20 +284,34 @@ class IntType extends ScalarType {
 
 	range(min, max, code) {
 		if (min !== null && min !== undefined && min !== -Infinity) {
-			if (!Number.isInteger(min)) {
-				throw new MyTypeError('The min-value is not an integer (found: %type "%value")', min);
-			}
-
-			this.addTest(`value < ${min}`, `%name must be >= ${min} (found: %value)`, code);
+			this.min(min, code);
 		}
 
 		if (max !== null && max !== undefined && max !== Infinity) {
-			if (!Number.isInteger(max)) {
-				throw new MyTypeError('The max-value is not an integer (found: %type "%value")', max);
-			}
-
-			this.addTest(`value > ${max}`, `%name must be <= ${max} (found: %value)`, code);
+			this.max(max, code);
 		}
+
+		return this;
+	}
+
+	min(min, code) {
+		if (!Number.isInteger(min)) {
+			throw new MyTypeError('The min-value is not an integer (found: %type "%value")', min);
+		}
+
+		this.addTest(`value < ${min}`, `%name must be >= ${min} (found: %value)`, code);
+
+		this.assertDefaultValue();
+
+		return this;
+	}
+
+	max(max, code) {
+		if (!Number.isInteger(max)) {
+			throw new MyTypeError('The max-value is not an integer (found: %type "%value")', max);
+		}
+
+		this.addTest(`value > ${max}`, `%name must be <= ${max} (found: %value)`, code);
 
 		this.assertDefaultValue();
 
@@ -348,20 +390,34 @@ class ArrayType extends Type {
 
 	length(min, max, code) {
 		if (min !== null && min !== undefined && min !== 0) {
-			if (!Number.isInteger(min)) {
-				throw new MyTypeError('The min-length is not an integer (found: %type "%value")', min);
-			}
-
-			this.addTest(`value.length < ${min}`, `%name array length must be >= ${min} (found: %length)`, code);
+			this.min(min, code);
 		}
 
 		if (max !== null && max !== undefined && max !== Infinity) {
-			if (!Number.isInteger(max)) {
-				throw new MyTypeError('The max-length is not an integer (found: %type "%value")', max);
-			}
-
-			this.addTest(`value.length > ${max}`, `%name array length must be <= ${max} (found: %length)`, code);
+			this.max(max, code);
 		}
+
+		return this;
+	}
+
+	min(min, code) {
+		if (!Number.isInteger(min)) {
+			throw new MyTypeError('The min-length is not an integer (found: %type "%value")', min);
+		}
+
+		this.addTest(`value.length < ${min}`, `%name array length must be >= ${min} (found: %length)`, code);
+
+		this.assertDefaultValue();
+
+		return this;
+	}
+
+	max(max, code) {
+		if (!Number.isInteger(max)) {
+			throw new MyTypeError('The max-length is not an integer (found: %type "%value")', max);
+		}
+
+		this.addTest(`value.length > ${max}`, `%name array length must be <= ${max} (found: %length)`, code);
 
 		this.assertDefaultValue();
 

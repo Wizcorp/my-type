@@ -5,7 +5,7 @@ const test = require('tape');
 test('Booleans', (t) => {
 	const { object, bool } = require('..');
 
-	function schema(optional, defaultValue, values) {
+	function schema(optional, defaultValue, conditions = {}) {
 		const b = bool('notBool');
 
 		if (optional) {
@@ -16,8 +16,8 @@ test('Booleans', (t) => {
 			b.default(defaultValue);
 		}
 
-		if (values) {
-			b.values(values, 'badValue');
+		if (conditions.hasOwnProperty('values')) {
+			b.values(conditions.values, 'badValue');
 		}
 
 		return object({ b });
@@ -49,17 +49,18 @@ test('Booleans', (t) => {
 	t.deepEqual(schema(true, true).create({}), { b: true });
 	t.deepEqual(schema(true, true).create({ b: false }), { b: false });
 	t.throws(() => { schema(true, 'str').create({}); });
+	t.throws(() => { schema(true, {}).create({}); });
 
 	// values
 
-	t.deepEqual(schema(false, null, [true]).create({ b: true }), { b: true });
-	throwsCode('badValue', () => { schema(false, null, [false]).create({ b: true }); });
-	t.throws(() => { schema(false, null, 'str'); });
-	t.throws(() => { schema(false, null, []); });
-	t.throws(() => { schema(false, null, ['str']); });
-	t.throws(() => { schema(false, null, [5]); });
-	t.throws(() => { schema(false, null, [5.5]); });
-	t.throws(() => { schema(false, null, [{}]); });
+	t.deepEqual(schema(false, null, { values: [true] }).create({ b: true }), { b: true });
+	throwsCode('badValue', () => { schema(false, null, { values: [false] }).create({ b: true }); });
+	t.throws(() => { schema(false, null, { values: 'str' }); });
+	t.throws(() => { schema(false, null, { values: [] }); });
+	t.throws(() => { schema(false, null, { values: ['str'] }); });
+	t.throws(() => { schema(false, null, { values: [5] }); });
+	t.throws(() => { schema(false, null, { values: [5.5] }); });
+	t.throws(() => { schema(false, null, { values: [{}] }); });
 
 	// type
 

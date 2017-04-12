@@ -5,7 +5,7 @@ const test = require('tape');
 test('Strings', (t) => {
 	const { object, string } = require('..');
 
-	function schema(optional, defaultValue, length, values, regexp) {
+	function schema(optional, defaultValue, conditions = {}) {
 		const s = string();
 
 		if (optional) {
@@ -16,19 +16,43 @@ test('Strings', (t) => {
 			s.default(defaultValue);
 		}
 
-		if (length) {
-			s.length(length[0], length[1]);
+		if (conditions.hasOwnProperty('min')) {
+			s.min(conditions.min, 'tooShort');
 		}
 
-		if (values) {
-			s.values(values);
+		if (conditions.hasOwnProperty('max')) {
+			s.max(conditions.max, 'tooLong');
 		}
 
-		if (regexp) {
-			s.regexp(regexp);
+		if (conditions.hasOwnProperty('length')) {
+			s.length(conditions.length[0], conditions.length[1], 'badLength');
+		}
+
+		if (conditions.hasOwnProperty('values')) {
+			s.values(conditions.values);
+		}
+
+		if (conditions.hasOwnProperty('regexp')) {
+			s.regexp(conditions.regexp, 'regexpMismatch');
 		}
 
 		return object({ s });
+	}
+
+	function throwsCode(code, fn) {
+		let error;
+
+		try {
+			fn();
+		} catch (err) {
+			error = err;
+		}
+
+		if (error) {
+			t.equal(error.code, code);
+		} else {
+			t.fail(`Expected function to throw: ${fn}`);
+		}
 	}
 
 	// optional
@@ -41,33 +65,51 @@ test('Strings', (t) => {
 	t.deepEqual(schema(true, 'str').create({}), { s: 'str' });
 	t.deepEqual(schema(true, 'foo').create({ s: 'str' }), { s: 'str' });
 	t.throws(() => { schema(true, 5).create({}); });
+	t.throws(() => { schema(true, {}).create({}); });
+
+	// min
+
+	t.throws(() => { schema(false, null, { min: 0.5 }); });
+	throwsCode('tooShort', () => { schema(false, null, { min: 5 }).create({ s: 'str' }); });
+
+	// max
+
+	t.throws(() => { schema(false, null, { max: 0.5 }); });
+	throwsCode('tooLong', () => { schema(false, null, { max: 2 }).create({ s: 'str' }); });
 
 	// length
 
-	t.deepEqual(schema(false, null, [0, 10]).create({ s: 'str' }), { s: 'str' });
-	t.deepEqual(schema(false, null, [0, 0]).create({ s: '' }), { s: '' });
-	t.deepEqual(schema(false, null, [1, 2]).create({ s: 's' }), { s: 's' });
-	t.deepEqual(schema(false, null, [1, 2]).create({ s: 'st' }), { s: 'st' });
-	t.throws(() => { schema(false, null, [1, 2]).create({ s: 'str' }); });
-	t.throws(() => { schema(false, null, [1, 2]).create({ s: '' }); });
-	t.throws(() => { schema(false, null, [0.5, 1]); });
-	t.throws(() => { schema(false, null, [0, 1.5]); });
+	t.deepEqual(schema(false, null, { length: [0, 10] }).create({ s: 'str' }), { s: 'str' });
+	t.deepEqual(schema(false, null, { length: [0, 0] }).create({ s: '' }), { s: '' });
+	t.deepEqual(schema(false, null, { length: [1, 2] }).create({ s: 's' }), { s: 's' });
+	t.deepEqual(schema(false, null, { length: [1, 2] }).create({ s: 'st' }), { s: 'st' });
+	t.throws(() => { schema(false, null, { length: [-Infinity, 10] }); });
+	t.deepEqual(schema(false, null, { length: [null, 10] }).create({ s: 'st' }), { s: 'st' });
+	t.deepEqual(schema(false, null, { length: [undefined, 10] }).create({ s: 'st' }), { s: 'st' });
+	t.deepEqual(schema(false, null, { length: [1, Infinity] }).create({ s: 'st' }), { s: 'st' });
+	t.deepEqual(schema(false, null, { length: [1, null] }).create({ s: 'st' }), { s: 'st' });
+	t.deepEqual(schema(false, null, { length: [1, undefined] }).create({ s: 'st' }), { s: 'st' });
+	t.throws(() => { schema(false, null, { length: [1, 2] }).create({ s: 'str' }); });
+	t.throws(() => { schema(false, null, { length: [1, 2] }).create({ s: '' }); });
+	t.throws(() => { schema(false, null, { length: [0.5, 1] }); });
+	t.throws(() => { schema(false, null, { length: [0, 1.5] }); });
+
 	// values
 
-	t.deepEqual(schema(false, null, null, ['a', 'b', 'c']).create({ s: 'b' }), { s: 'b' });
-	t.throws(() => { schema(false, null, null, ['a', 'b']).create({ s: 'str' }); });
-	t.throws(() => { schema(false, null, null, 'str'); });
-	t.throws(() => { schema(false, null, null, []); });
-	t.throws(() => { schema(false, null, null, [5]); });
-	t.throws(() => { schema(false, null, null, [5.5]); });
-	t.throws(() => { schema(false, null, null, [false, true]); });
-	t.throws(() => { schema(false, null, null, [{}]); });
+	t.deepEqual(schema(false, null, { values: ['a', 'b', 'c'] }).create({ s: 'b' }), { s: 'b' });
+	t.throws(() => { schema(false, null, { values: ['a', 'b'] }).create({ s: 'str' }); });
+	t.throws(() => { schema(false, null, { values: 'str' }); });
+	t.throws(() => { schema(false, null, { values: [] }); });
+	t.throws(() => { schema(false, null, { values: [5] }); });
+	t.throws(() => { schema(false, null, { values: [5.5] }); });
+	t.throws(() => { schema(false, null, { values: [false, true] }); });
+	t.throws(() => { schema(false, null, { values: [{}] }); });
 
 	// regexp
 
-	t.deepEqual(schema(false, null, null, null, /^[a-z]+$/).create({ s: 'str' }), { s: 'str' });
-	t.throws(() => { schema(false, null, null, null, /^[A-Z]+$/).create({ s: 'str' }); });
-	t.throws(() => { schema(false, null, null, null, 'str'); });
+	t.deepEqual(schema(false, null, { regexp: /^[a-z]+$/ }).create({ s: 'str' }), { s: 'str' });
+	throwsCode('regexpMismatch', () => { schema(false, null, { regexp: /^[A-Z]+$/ }).create({ s: 'str' }); });
+	t.throws(() => { schema(false, null, { regexp: 'str' }); });
 
 	// type
 
