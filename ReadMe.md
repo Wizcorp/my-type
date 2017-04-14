@@ -73,6 +73,7 @@ const { string, number, int, bool, mixed, any, array, object } = require('my-typ
 You can set up all types to have a default value.
 
 * `string().default('Hello world')`: creates a string type with a default value
+* `int().default(Date.now)`: creates an int type with a default value that is always the current time
 
 If you want an object to be created according to a default format, simply set the
 defaults on its properties.

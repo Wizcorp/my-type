@@ -96,7 +96,11 @@ class Type {
 
 	assertDefaultValue() {
 		if (this.defaultValue !== undefined) {
-			this.assert(this.defaultValue);
+			if (typeof this.defaultValue === 'function') {
+				this.assert(this.defaultValue());
+			} else {
+				this.assert(this.defaultValue);
+			}
 		}
 	}
 
@@ -562,6 +566,8 @@ class ObjectType extends Type {
 				body.push(`  ${JSON.stringify(prop)}: ${type._getDefaultObject()}`);
 			} else if (type.defaultValue === undefined) {
 				body.push(`  ${JSON.stringify(prop)}: undefined`);
+			} else if (typeof type.defaultValue === 'function') {
+				body.push(`  ${JSON.stringify(prop)}: ${JSON.stringify(type.defaultValue())}`);
 			} else {
 				body.push(`  ${JSON.stringify(prop)}: ${JSON.stringify(type.defaultValue)}`);
 			}
