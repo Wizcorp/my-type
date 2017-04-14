@@ -5,7 +5,7 @@ const test = require('tape');
 test('Objects', (t) => {
 	const { object, int, string, bool } = require('..');
 
-	function schema(optional, props, dict) {
+	function schema(optional, props, dict, conditions = {}) {
 		const o = object(props, 'notObject');
 
 		if (optional) {
@@ -14,6 +14,18 @@ test('Objects', (t) => {
 
 		if (dict) {
 			o.dictionary(dict.prop, dict.value);
+		}
+
+		if (conditions.hasOwnProperty('min')) {
+			o.min(conditions.min, 'tooShort');
+		}
+
+		if (conditions.hasOwnProperty('max')) {
+			o.max(conditions.max, 'tooLong');
+		}
+
+		if (conditions.hasOwnProperty('length')) {
+			o.length(conditions.length[0], conditions.length[1], 'badLength');
 		}
 
 		return object({ o });
@@ -86,6 +98,26 @@ test('Objects', (t) => {
 	t.throws(() => { schema(true, propsWithDefault, dict).create({ o: { a: {} } }); });
 	t.throws(() => { schema(true, propsWithDefault, { prop: 'foo', value: dictValueType }); });
 	t.throws(() => { schema(true, propsWithDefault, { prop: dictPropertyType, value: 'foo' }); });
+
+	// min
+
+	t.throws(() => { schema(false, propsWithDefault, dict, { min: 0.5 }); });
+	throwsCode('tooShort', () => { schema(false, propsWithDefault, dict, { min: 3 }).create({ o: {} }); });
+	t.deepEqual(schema(false, propsWithDefault, dict, { min: 3 }).create({ o: { a: true } }), { o: { foo: 3, bar: 5, a: true } });
+
+	// max
+
+	t.throws(() => { schema(false, propsWithDefault, dict, { max: 0.5 }); });
+	throwsCode('tooLong', () => { schema(false, propsWithDefault, dict, { max: 3 }).create({ o: { a: true, b: false } }); });
+	t.deepEqual(schema(false, propsWithDefault, dict, { max: 3 }).create({ o: { a: true } }), { o: { foo: 3, bar: 5, a: true } });
+
+	// length
+
+	t.deepEqual(schema(false, propsWithDefault, dict, { length: [0, 10] }).create({ o: { foo: 3, bar: 5 } }), { o: { foo: 3, bar: 5 } });
+	throwsCode('badLength', () => { schema(false, propsWithDefault, dict, { length: [0, 1] }).create({ o: {} }); });
+	throwsCode('badLength', () => { schema(false, propsWithDefault, dict, { length: [3, 4] }).create({ o: {} }); });
+	t.throws(() => { schema(false, propsWithDefault, dict, { length: [0.5, 1] }); });
+	t.throws(() => { schema(false, propsWithDefault, dict, { length: [0, 1.5] }); });
 
 	t.end();
 });

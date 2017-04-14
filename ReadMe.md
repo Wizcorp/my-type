@@ -102,6 +102,9 @@ defaults on its properties.
 * `array(type).max(max, [code])`: creates an array type with a maximum length
 * `array(type).length(min, max, [code])`: creates an array type with a min/max length
 * `object(props).dictionary(keyType, valueType)`: creates an object that allows keys by any name, but with strict key and value types
+* `object(props).min(min, [code])`: creates an object with a minimum number of properties (for dictionaries)
+* `object(props).max(max, [code])`: creates an object with a maximum number of properties (for dictionaries)
+* `object(props).length(min, max, [code])`: creates an object with a min/max number of properties (for dictionaries)
 
 Every constraint function accepts an extra optional `code` argument. When the constraint is violated, this code will be
 available on your error object as `error.code`. Use either strings or numbers.

@@ -20,6 +20,18 @@ function getType(value) {
 	return typeof value;
 }
 
+function getLength(value) {
+	if (value && typeof value === 'object') {
+		return Object.keys(value).length;
+	}
+
+	if (!value || !value.hasOwnProperty('length')) {
+		return 'undefined';
+	}
+
+	return value.length;
+}
+
 
 class MyTypeError extends TypeError {
 	constructor(message, value, code) {
@@ -52,7 +64,7 @@ class MyTypeError extends TypeError {
 			replace('%type', getType(this.value)).
 			replace('%name', this._valueName || 'Value').
 			replace('%value', this.value).
-			replace('%length', this.value && this.value.hasOwnProperty('length') ? this.value.length : 'undefined');
+			replace('%length', getLength(this.value));
 	}
 }
 
@@ -494,6 +506,44 @@ class ObjectType extends Type {
 		}
 
 		this.dict = { propertyType, valueType };
+		return this;
+	}
+
+	length(min, max, code) {
+		if (min !== null && min !== undefined && min !== 0) {
+			this.min(min, code);
+		}
+
+		if (max !== null && max !== undefined && max !== Infinity) {
+			this.max(max, code);
+		}
+
+		return this;
+	}
+
+	min(min, code) {
+		if (!Number.isInteger(min)) {
+			throw new MyTypeError('The min-length is not an integer (found: %type "%value")', min);
+		}
+
+		const test = `Object.keys(value).length < ${min}`;
+		const msg = `%name property count must be >= ${min} (found: %length)`;
+
+		this.addTest(test, msg, code);
+
+		return this;
+	}
+
+	max(max, code) {
+		if (!Number.isInteger(max)) {
+			throw new MyTypeError('The max-length is not an integer (found: %type "%value")', max);
+		}
+
+		const test = `Object.keys(value).length > ${max}`;
+		const msg = `%name property count must be <= ${max} (found: %length)`;
+
+		this.addTest(test, msg, code);
+
 		return this;
 	}
 
