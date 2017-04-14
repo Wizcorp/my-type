@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "eslint . && tape 'test/*.js' | tap-dot",
-    "cover": "nyc tape 'test/*.js'"
+    "cover": "nyc tape 'test/*.js'",
+    "coveralls": "nyc tape 'test/*.js' && nyc report --reporter=text-lcov | coveralls"
   },
   "author": "Ron Korving <rkorving@wizcorp.jp>",
   "license": "MIT",
@@ -14,6 +15,7 @@
     "deep-copy": "^1.2.0"
   },
   "devDependencies": {
+    "coveralls": "^2.13.0",
     "eslint": "^3.14.0",
     "nyc": "^10.2.0",
     "tap-dot": "^1.0.5",

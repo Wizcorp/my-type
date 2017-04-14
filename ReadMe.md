@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/Wizcorp/my-type.svg?branch=master)](https://travis-ci.org/Wizcorp/my-type)
-
+[![Coverage Status](https://coveralls.io/repos/github/Wizcorp/my-type/badge.svg?branch=master)](https://coveralls.io/github/Wizcorp/my-type?branch=master)
 
 # My Type
 
