@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/Wizcorp/my-type.svg?branch=master)](https://travis-ci.org/Wizcorp/my-type)
+
+
 # My Type
 
 A minimalistic JavaScript type checker and object creation library.
