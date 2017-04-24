@@ -30,5 +30,10 @@ test('Mixed', (t) => {
 	t.throws(() => { schema(false, [string(), int()]).create({ n: {} }); });
 	t.throws(() => { schema(false, [string(), 5]).create({ n: {} }); });
 
+	// default subtypes
+
+	t.deepEqual(schema(true, [string(), int().default(5)]).create({}), { n: 5 });
+	t.deepEqual(schema(true, [string().default('foo'), int()]).create({}), { n: 'foo' });
+
 	t.end();
 });

@@ -59,8 +59,13 @@ test('Arrays', (t) => {
 
 	// default
 
+	function fn() {
+		return ['a', 'b', 'c'];
+	}
+
 	t.deepEqual(schema(true, ['a']).create({}), { a: ['a'] });
 	t.deepEqual(schema(true, ['b']).create({ a: ['a'] }), { a: ['a'] });
+	t.deepEqual(schema(true, fn).create({}), { a: ['a', 'b', 'c'] });
 	t.throws(() => { schema(true, 'str').create({}); });
 
 	// min

@@ -108,9 +108,8 @@ class Type {
 
 	assertDefaultValue() {
 		if (this.defaultValue !== undefined) {
-			if (typeof this.defaultValue === 'function') {
-				this.assert(this.defaultValue());
-			} else {
+			// we don't invoke functions because of possible side-effects during setup
+			if (typeof this.defaultValue !== 'function') {
 				this.assert(this.defaultValue);
 			}
 		}
@@ -128,7 +127,7 @@ class Type {
 		if (!this.assertFn) {
 			const tests = this.getTests();
 
-			this.assertFn = new Function('value', 'MyTypeError', tests.join('\n')); // eslint-disable-line no-new-func
+			this.assertFn = new Function('value', 'MyTypeError', tests.join('\n'));
 		}
 
 		this.assertFn(value, MyTypeError);
@@ -186,6 +185,14 @@ class ScalarType extends Type {
 		this.assertDefaultValue();
 
 		return this;
+	}
+
+	_createDefaultValue() {
+		if (typeof this.defaultValue === 'function') {
+			return this.defaultValue();
+		}
+
+		return this.defaultValue;
 	}
 }
 
@@ -344,7 +351,11 @@ class BooleanType extends ScalarType {
 }
 
 
-class AnyType extends Type {}
+class AnyType extends Type {
+	_createDefaultValue() {
+		return undefined;
+	}
+}
 
 
 class MixedType extends Type {
@@ -357,6 +368,17 @@ class MixedType extends Type {
 				throw new MyTypeError(`Type is not a real type`, type);
 			}
 		}
+	}
+
+	_createDefaultValue() {
+		for (const type of this.subTypes) {
+			const defaultValue = type._createDefaultValue();
+			if (defaultValue !== undefined) {
+				return defaultValue;
+			}
+		}
+
+		return undefined;
 	}
 
 	assert(value) {
@@ -386,6 +408,8 @@ class ArrayType extends Type {
 	constructor(elementType, code) {
 		super();
 		this.elementType = elementType;
+		this.createFn = undefined;
+
 		this.addTest('!Array.isArray(value)', '%name is not an array (found: %type)', code);
 
 		if (!(elementType instanceof Type)) {
@@ -394,14 +418,33 @@ class ArrayType extends Type {
 	}
 
 	default(value) {
-		if (!Array.isArray(value)) {
+		if (typeof value === 'function') {
+			this.defaultValue = value;
+		} else if (Array.isArray(value)) {
+			this.defaultValue = deepCopy(value);
+		} else {
 			throw new MyTypeError('The default value is not an array (found: %type)', value);
 		}
 
-		this.defaultValue = deepCopy(value);
 		this.assertDefaultValue();
 
 		return this;
+	}
+
+	_createDefaultValueFactory() {
+		if (typeof this.defaultValue === 'function') {
+			this.createFn = this.defaultValue;
+		} else {
+			this.createFn = new Function(`return ${JSON.stringify(this.defaultValue)};`);
+		}
+	}
+
+	_createDefaultValue() {
+		if (!this.createFn) {
+			this._createDefaultValueFactory();
+		}
+
+		return this.createFn();
 	}
 
 	length(min, max, code) {
@@ -602,36 +645,32 @@ class ObjectType extends Type {
 		}
 	}
 
-	_getDefaultObject() {
+	_createDefaultValueFactory() {
 		if (this.isOptional) {
-			return 'undefined';
+			return new Function('return undefined;');
 		}
 
 		const body = [];
 
 		for (const prop of this.propNames) {
-			const type = this.propTypes[prop];
+			const propName = JSON.stringify(prop);
 
-			if (type instanceof ObjectType) {
-				body.push(`  ${JSON.stringify(prop)}: ${type._getDefaultObject()}`);
-			} else if (type.defaultValue === undefined) {
-				body.push(`  ${JSON.stringify(prop)}: undefined`);
-			} else if (typeof type.defaultValue === 'function') {
-				body.push(`  ${JSON.stringify(prop)}: ${JSON.stringify(type.defaultValue())}`);
-			} else {
-				body.push(`  ${JSON.stringify(prop)}: ${JSON.stringify(type.defaultValue)}`);
-			}
+			body.push(`  ${propName}: types[${propName}]._createDefaultValue()`);
 		}
 
-		return `{\n${body.join(',\n  ')}\n}`;
+		return new Function('types', `return {\n${body.join(',\n  ')}\n};`);
+	}
+
+	_createDefaultValue() {
+		if (!this.createFn) {
+			this.createFn = this._createDefaultValueFactory();
+		}
+
+		return this.createFn(this.propTypes);
 	}
 
 	create(data) {
-		if (!this.createFn) {
-			this.createFn = new Function(`return ${this._getDefaultObject()};`); // eslint-disable-line no-new-func
-		}
-
-		const obj = this.createFn();
+		const obj = this._createDefaultValue();
 		return this.update(obj, data);
 	}
 
