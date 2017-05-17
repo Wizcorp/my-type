@@ -113,7 +113,7 @@ Every constraint function accepts an extra optional `code` argument. When the co
 available on your error object as `error.code`. Use either strings or numbers.
 
 For `length` and `range` constraints, you can use `-Infinity` or `Infinity` to indicate that there is
-no limit on the lower or upper end. Alternatively, you can set pass `null` or `undefined`.
+no limit on the lower or upper end. Alternatively, you can pass `null` or `undefined`.
 
 Default, Optional and Constraints can be chained in any order:
 
