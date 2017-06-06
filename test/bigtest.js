@@ -20,7 +20,10 @@ test('Create and update a big object', (t) => {
 		pets: object({
 			cat: string().optional(),
 			dog: string().optional()
-		})
+		}),
+		bestFriend: object({
+			name: string().default('Raymond')
+		}).optional()
 	});
 
 	const id = uuid();
@@ -38,7 +41,8 @@ test('Create and update a big object', (t) => {
 		pets: {
 			cat: undefined,
 			dog: undefined
-		}
+		},
+		bestFriend: undefined
 	};
 
 	const expectedBob2 = {
@@ -53,7 +57,8 @@ test('Create and update a big object', (t) => {
 		pets: {
 			cat: 'Flip',
 			dog: undefined
-		}
+		},
+		bestFriend: undefined
 	};
 
 	const bob = schema.create({
@@ -90,6 +95,14 @@ test('Create and update a big object', (t) => {
 	});
 
 	t.deepEqual(bob, expectedBob1);
+
+	// do not update() with missing properties that have a default, but are not optional
+
+	t.throws(() => {
+		schema.update(bob, {
+			bestFriend: {}
+		});
+	});
 
 	t.end();
 });
