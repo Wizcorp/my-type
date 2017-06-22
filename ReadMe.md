@@ -258,7 +258,7 @@ const movie = object({
 });
 
 const options = {
-	skipHeader: true,                    // skips the header if true
+	skipHeader: false,                   // skips the header if true
 	filter: (entry) => { return true; }, // skips each entry for which filter returns false
 	transform: (entry) => {}             // allows modification of the entry before serialization
 };
