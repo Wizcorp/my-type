@@ -16,28 +16,29 @@ function join(strings, lengths) {
 }
 
 const serialize = {
-	path: (entry) => {
-		return entry.path.join('.');
+	default: (value) => {
+		if (value === null || value === undefined) {
+			return '';
+		}
+
+		return String(value);
 	},
-	code: (entry) => {
-		return entry.code || '';
-	},
-	message: (entry) => {
-		return entry.message || '';
-	},
-	'failure condition': (entry) => {
-		return entry.failureCondition || '';
+	path: (path) => {
+		return path.join('.');
 	}
 };
 
-module.exports = function (entries, fields) {
+module.exports = function (entries, fields, options) {
 	const lengths = fields.map((field) => {
 		return field.length;
 	});
 
 	for (const entry of entries) {
 		for (let i = 0; i < fields.length; i += 1) {
-			lengths[i] = Math.max(lengths[i], serialize[fields[i]](entry).length);
+			const field = fields[i];
+			const toString = serialize[field] || serialize.default;
+
+			lengths[i] = Math.max(lengths[i], toString(entry[field]).length);
 		}
 	}
 
@@ -47,15 +48,20 @@ module.exports = function (entries, fields) {
 
 	let out = '';
 
-	out += `+${'-'.repeat(totalLength - 2)}+\n`;
-	out += join(fields, lengths);
+	if (!options.skipHeader) {
+		out += `+${'-'.repeat(totalLength - 2)}+\n`;
+		out += join(fields, lengths);
+	}
+
 	out += `+${'-'.repeat(totalLength - 2)}+\n`;
 
 	for (const entry of entries) {
 		const row = [];
 
 		for (let i = 0; i < fields.length; i += 1) {
-			row[i] = serialize[fields[i]](entry);
+			const toString = serialize[fields[i]] || serialize.default;
+
+			row[i] = toString(entry[fields[i]]);
 		}
 
 		out += join(row, lengths);

@@ -9,26 +9,30 @@ function join(cells) {
 }
 
 const serialize = {
-	path: (entry) => {
-		return escape(entry.path.join('.'));
+	default: (value) => {
+		if (value === null || value === undefined) {
+			return '""';
+		}
+
+		return escape(String(value));
 	},
-	code: (entry) => {
-		return escape(entry.code || '');
-	},
-	message: (entry) => {
-		return escape(entry.message || '');
-	},
-	'failure condition': (entry) => {
-		return escape(entry.failureCondition || '');
+	path: (path) => {
+		return escape(path.join('.'));
 	}
 };
 
-module.exports = function (entries, fields) {
-	let out = join(fields.map(escape));
+module.exports = function (entries, fields, options) {
+	let out = '';
+
+	if (!options.skipHeader) {
+		out += join(fields.map(escape));
+	}
 
 	for (const entry of entries) {
 		out += join(fields.map((field) => {
-			return serialize[field](entry);
+			const toString = serialize[field] || serialize.default;
+
+			return toString(entry[field]);
 		}));
 	}
 

@@ -1,17 +1,11 @@
 'use strict';
 
 const serialize = {
-	path: (entry) => {
-		return entry.path.slice();
+	default: (value) => {
+		return value;
 	},
-	code: (entry) => {
-		return entry.code;
-	},
-	message: (entry) => {
-		return entry.message;
-	},
-	'failure condition': (entry) => {
-		return entry.failureCondition;
+	path: (path) => {
+		return path.slice();
 	}
 };
 
@@ -19,7 +13,9 @@ module.exports = function (entries, fields) {
 	return entries.map((entry) => {
 		const copy = {};
 		for (const field of fields) {
-			copy[field] = serialize[field](entry);
+			const toString = serialize[field] || serialize.default;
+
+			copy[field] = toString(entry[field]);
 		}
 		return copy;
 	});

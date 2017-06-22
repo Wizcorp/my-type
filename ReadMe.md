@@ -257,7 +257,13 @@ const movie = object({
 	actors:    array(actor)
 });
 
-console.log(describe(movie, 'ascii', ['path', 'code', 'message']));
+const options = {
+	skipHeader: true,                    // skips the header if true
+	filter: (entry) => { return true; }, // skips each entry for which filter returns false
+	transform: (entry) => {}             // allows modification of the entry before serialization
+};
+
+console.log(describe(movie, 'ascii', ['path', 'code', 'message'], options));
 ```
 
 Output:

@@ -133,7 +133,7 @@ class Type {
 		this.assertFn(value, MyTypeError);
 	}
 
-	describe(path, output) {
+	describe(path, output, options) {
 		const tests = this.getTests();
 
 		for (const test of tests) {
@@ -147,7 +147,27 @@ class Type {
 					message = message.replace('%name', path[path.length - 1]);
 				}
 
-				output.push({ path, failureCondition: test.failure, message, code });
+				const entry = {
+					path,
+					failureCondition: test.failure,
+					message,
+					code
+				};
+
+				if (options) {
+					if (options.filter) {
+						if (!options.filter(entry)) {
+							// skip this entry
+							continue;
+						}
+					}
+
+					if (options.transform) {
+						options.transform(entry);
+					}
+				}
+
+				output.push(entry);
 			}
 		}
 	}
@@ -502,15 +522,15 @@ class ArrayType extends Type {
 		}
 	}
 
-	describe(path, output) {
-		super.describe(path, output);
+	describe(path, output, options) {
+		super.describe(path, output, options);
 
 		path = path.slice();
 		if (path.length > 0) {
 			path[path.length - 1] += '[index]';
 		}
 
-		this.elementType.describe(path, output);
+		this.elementType.describe(path, output, options);
 	}
 }
 
@@ -709,12 +729,12 @@ class ObjectType extends Type {
 		return oldValue;
 	}
 
-	describe(path, output) {
-		super.describe(path, output);
+	describe(path, output, options) {
+		super.describe(path, output, options);
 
 		for (const prop of this.propNames) {
 			const type = this.propTypes[prop];
-			type.describe(path.concat(prop), output);
+			type.describe(path.concat(prop), output, options);
 		}
 	}
 }
@@ -755,15 +775,15 @@ exports.array = function (elementType, code) {
 };
 
 
-exports.describe = function (schema, style, fields) {
+exports.describe = function (schema, style, fields, options) {
 	const describer = describers[style];
 	if (!describer) {
 		throw new Error(`No describer "${style}" found`);
 	}
 
-	fields = fields || ['path', 'code', 'message', 'failure condition'];
+	fields = fields || ['path', 'code', 'message', 'failureCondition'];
 
 	const entries = [];
-	schema.describe([], entries);
-	return describer(entries, fields);
+	schema.describe([], entries, options);
+	return describer(entries, fields, options || {});
 };
