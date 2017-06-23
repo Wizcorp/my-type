@@ -1,6 +1,6 @@
 {
   "name": "my-type",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "description": "Yet another JS schema assertion library",
   "main": "index.js",
   "scripts": {
