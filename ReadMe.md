@@ -258,7 +258,8 @@ const movie = object({
 });
 
 const options = {
-	skipHeader: false,                   // skips the header if true
+	delimiter: ',',                      // delimiter when using CSV output (default: ",")
+	skipHeader: false,                   // skips the header if true (default: false)
 	filter: (entry) => { return true; }, // skips each entry for which filter returns false
 	transform: (entry) => {}             // allows modification of the entry before serialization
 };

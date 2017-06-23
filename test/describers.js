@@ -47,6 +47,26 @@ test('CSV describer', (t) => {
 
 	t.equal(actual, expected);
 
+	// CSV: custom delimiter
+
+	expected = joinRows([
+		'"path"	"code"',
+		'""	""',           // root not being optional
+		'""	""',           // root not being an object
+		'"foo"	""',        // foo not being optional
+		'"foo"	""',        // foo not being a string
+		'"foo"	"outOfRange"',
+		'"sub"	""',        // sub not being optional
+		'"sub"	""',        // sub not being an object
+		'"sub.bar"	""',    // bar not being optional
+		'"sub.bar"	""',    // bar not being a string
+		'"sub.bar"	"wrongEnumValue"'
+	]);
+
+	actual = describe(schema, 'csv', ['path', 'code'], { delimiter: '\t' });
+
+	t.equal(actual, expected);
+
 	// ASCII: test all fields not throwing
 
 	t.doesNotThrow(() => { describe(schema, 'ascii'); });
