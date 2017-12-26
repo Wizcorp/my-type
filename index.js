@@ -544,6 +544,10 @@ class ObjectType extends Type {
 			throw new MyTypeError('Expected an object for properties (found: %type)', propTypes);
 		}
 
+		if (Array.isArray(propTypes) && propTypes.length == 0) {
+				throw new MyTypeError('Expected an object for properties (found: empty array)');
+		}
+
 		this.propTypes = propTypes;
 		this.propNames = Object.keys(propTypes);
 		this.dict = null;

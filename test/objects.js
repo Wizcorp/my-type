@@ -54,6 +54,7 @@ test('Objects', (t) => {
 	// creation
 
 	t.throws(() => { object(123); });
+	t.throws(() => { object([]); });
 
 	// optional
 
