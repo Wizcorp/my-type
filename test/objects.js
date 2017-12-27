@@ -64,6 +64,7 @@ test('Objects', (t) => {
 	// assert
 
 	t.throws(() => { schema(false, props).assert({ o: {} }); });
+	t.throws(() => { schema(false, props).assert({ o: [] }); });
 
 	// properties
 

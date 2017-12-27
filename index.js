@@ -544,8 +544,8 @@ class ObjectType extends Type {
 			throw new MyTypeError('Expected an object for properties (found: %type)', propTypes);
 		}
 
-		if (Array.isArray(propTypes) && propTypes.length == 0) {
-				throw new MyTypeError('Expected an object for properties (found: empty array)');
+		if (Array.isArray(propTypes)) {
+			throw new MyTypeError('Expected an object for properties (found: array)');
 		}
 
 		this.propTypes = propTypes;
@@ -634,6 +634,10 @@ class ObjectType extends Type {
 
 		if (this.isOptional && (value === undefined || value === null)) {
 			return;
+		}
+
+		if(Array.isArray(value)) {
+			throw new MyTypeError(`Object is an array`, value);
 		}
 
 		// test provided properties
