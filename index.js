@@ -538,7 +538,7 @@ class ArrayType extends Type {
 class ObjectType extends Type {
 	constructor(propTypes, code) {
 		super();
-		this.addTest("value === null || typeof value !== 'object'", '%name is not an object (found: %type)', code);
+		this.addTest("value === null || typeof value !== 'object' || Array.isArray(value)", '%name is not an object (found: %type)', code);
 
 		if (!propTypes || typeof propTypes !== 'object') {
 			throw new MyTypeError('Expected an object for properties (found: %type)', propTypes);
@@ -634,10 +634,6 @@ class ObjectType extends Type {
 
 		if (this.isOptional && (value === undefined || value === null)) {
 			return;
-		}
-
-		if(Array.isArray(value)) {
-			throw new MyTypeError(`Object is an array`, value);
 		}
 
 		// test provided properties
