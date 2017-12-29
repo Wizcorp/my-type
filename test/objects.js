@@ -54,6 +54,7 @@ test('Objects', (t) => {
 	// creation
 
 	t.throws(() => { object(123); });
+	t.throws(() => { object([]); });
 
 	// optional
 
@@ -63,6 +64,7 @@ test('Objects', (t) => {
 	// assert
 
 	t.throws(() => { schema(false, props).assert({ o: {} }); });
+	t.throws(() => { schema(false, props).assert({ o: [] }); });
 
 	// properties
 
